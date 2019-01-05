@@ -1,0 +1,29 @@
+{
+  "name": "forum-api",
+  "version": "0.1.0",
+  "description": "TP DB forum API",
+  "main": "server.js",
+  "scripts": {
+    "prestart": "npm install",
+    "start": "node server.js",
+    "s": "node server.js",
+    "dev": "nodemon \"npm start\""
+  },
+  "license": "Unlicense",
+  "private": true,
+  "dependencies": {
+    "bluebird": "^3.5.3",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "morgan": "^1.9.1",
+    "pg": "^7.7.1",
+    "pg-pool": "^2.0.5",
+    "pg-promise": "^8.5.4"
+  },
+  "devDependencies": {
+    "eslint": "^5.11.1",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.14.0",
+    "nodemon": "^1.18.9"
+  }
+}
