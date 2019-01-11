@@ -83,7 +83,11 @@ async function getThreads(req, reply) {
   }
 
   if (req.query.since) {
-    since = `AND created <= '${req.query.since}'`;
+    if (desc === 'true') {
+      since = `AND created <= '${req.query.since}'`;
+    } else {
+      since = `AND created >= '${req.query.since}'`;
+    }
   } else {
     since = '';
   }
