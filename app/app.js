@@ -1,24 +1,20 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+// const express = require('express');
+const app = require('fastify')({
+  logger: {
+    level: 'error',
+  },
+});
+// const bodyParser = require('body-parser');
 const logger = require('morgan');
 
-const app = express();
+// const app = express();
 
-require('./routes/routes')(app);
-
-app.use(logger('dev'));
 // app.use(bodyParser.urlencoded({
 //   extended: true,
 // }));
-app.use(bodyParser.json());
+// app.use(bodyParser.json());
+app.use(logger('dev'));
 
-app.use((err, req, res) => {
-  if (res.status === 500) {
-    res.json({
-      status: 'error',
-      message: err,
-    });
-  }
-});
+require('./routes/routes')(app);
 
 module.exports = app;
