@@ -4,33 +4,40 @@ const Thread = require('../models/thread');
 const db = dbConfig.db;
 
 async function createThread(req, reply) {
-  const slug = req.body.slug ? req.body.slug : null;
+  const slug = req.body.slug ? req.body.slug : req.params.slug;
+  const forum = req.body.forum ? req.body.forum : req.params.slug;
   let slugStr;
-  if (slug) {
+  if (req.body.slug) {
     slugStr = ', slug';
   } else {
     slugStr = '';
   }
 
-  const t = new Thread({
-    author: req.body.author,
-    created: req.body.created,
-    forum: req.body.forum,
-    message: req.body.message,
-    title: req.body.title,
-    slug: req.params.slug,
+  console.log({
+    text: `INSERT INTO threads (author, created, forum, message, title, slug) VALUES
+    ((SELECT nickname FROM users WHERE nickname=$1),
+    $2,
+    (SELECT slug FROM forums WHERE slug=$3),
+    $4, $5, $6) RETURNING author, created, forum, message, title, votes, id`,
+    values: [
+      req.body.author,
+      req.body.created,
+      forum,
+      req.body.message,
+      req.body.title,
+      slug,
+    ],
   });
 
   db.one({
     text: `INSERT INTO threads (author, created, forum, message, title, slug) VALUES
     ((SELECT nickname FROM users WHERE nickname=$1),
-    $2,
-    (SELECT slug FROM forums WHERE slug=$3),
-    $4, $5, $6) RETURNING author, created, forum, message, title, votes, id ${slugStr}`,
+    $2, (SELECT slug FROM forums WHERE slug=$3),$4, $5, $6)
+    RETURNING author, created, forum, message, title, votes, id ${slugStr}`,
     values: [
       req.body.author,
       req.body.created,
-      req.body.forum,
+      forum,
       req.body.message,
       req.body.title,
       slug,
@@ -46,13 +53,16 @@ async function createThread(req, reply) {
       if (err.code === dbConfig.dataConflict) {
         db.one({
           text: 'SELECT * FROM threads WHERE slug=$1',
-          values: [t.slug],
+          values: [slug],
         })
           .then((data) => {
             console.log(data);
-            // const existingForum = data.map(tempForum => new Forum(tempForum));
             reply.code(409)
               .send(data);
+          })
+          .catch((error) => {
+            console.log(error);
+            reply.code(500).send(error);
           });
       } else if (err.code === dbConfig.notNullErorr) {
         reply.code(404)

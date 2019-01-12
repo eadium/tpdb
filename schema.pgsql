@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS CITEXT;
 
 CREATE TABLE IF NOT EXISTS users (
-  id       BIGSERIAL    PRIMARY KEY,
+  id       SERIAL    PRIMARY KEY,
   about    TEXT,
   email    CITEXT         NOT NULL,
   fullname CITEXT         NOT NULL,
@@ -25,7 +25,7 @@ CREATE UNIQUE INDEX idx_forums_slug    ON forums(slug);
 CREATE TABLE IF NOT EXISTS threads (
   id        SERIAL PRIMARY KEY,
   author    CITEXT        NOT NULL REFERENCES users(nickname),
-  created   TIMESTAMPTZ,
+  created   TIMESTAMPTZ DEFAULT now(),
   forum     CITEXT        NOT NULL REFERENCES forums(slug),
   message   TEXT        NOT NULL,
   slug      CITEXT      DEFAULT NULL UNIQUE,
@@ -35,18 +35,23 @@ CREATE TABLE IF NOT EXISTS threads (
 
 CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
 
-
-CREATE TABLE IF NOT EXISTS posts (
-  id        BIGSERIAL   PRIMARY KEY,
-  author    TEXT        NOT NULL,
-  created   TIMESTAMPTZ NOT NULL,
-  forum     TEXT        NOT NULL,
-  is_edited BOOLEAN     DEFAULT FALSE,
-  message   TEXT,
-  parent    BIGINT,
-  --path    BIGINT [] NOT NULL,
-  thread_id BIGINT REFERENCES threads(id) NOT NULL
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  path INTEGER[],
+  author CITEXT,
+  created TIMESTAMPTZ DEFAULT now(),
+  edited BOOLEAN,
+  message TEXT,
+  parent_id INTEGER REFERENCES posts(id),
+  forum_slug CITEXT,
+  thread_id INTEGER REFERENCES threads NOT NULL
 );
+
+CREATE INDEX idx_post_id ON posts(id);
+CREATE INDEX idx_post_thread_id ON posts(thread_id);
+CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
+CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
+CREATE INDEX idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);
 
 CREATE TABLE IF NOT EXISTS votes (
   user_id   BIGINT REFERENCES users(id)   NOT NULL,
