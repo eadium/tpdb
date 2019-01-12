@@ -13,22 +13,6 @@ async function createThread(req, reply) {
     slugStr = '';
   }
 
-  console.log({
-    text: `INSERT INTO threads (author, created, forum, message, title, slug) VALUES
-    ((SELECT nickname FROM users WHERE nickname=$1),
-    $2,
-    (SELECT slug FROM forums WHERE slug=$3),
-    $4, $5, $6) RETURNING author, created, forum, message, title, votes, id`,
-    values: [
-      req.body.author,
-      req.body.created,
-      forum,
-      req.body.message,
-      req.body.title,
-      slug,
-    ],
-  });
-
   db.one({
     text: `INSERT INTO threads (author, created, forum, message, title, slug) VALUES
     ((SELECT nickname FROM users WHERE nickname=$1),
@@ -142,8 +126,44 @@ async function getThreads(req, reply) {
     });
 }
 
+async function getThreadInfo(req, reply) {
+  let sql = `
+    SELECT author, created, forum, id, message, slug, title FROM threads
+      WHERE 
+  `;
+  if (isNaN(req.params.slug)) {
+    sql += ' slug = $1';
+  } else {
+    sql += ' id = $1';
+  }
+
+  db.one({
+    text: sql,
+    values: [req.params.slug],
+  })
+    .then((data) => {
+      if (data.length === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find forum by slug ${req.params.slug}`,
+          });
+      }
+      reply.code(200)
+        .send(data);
+    })
+    .catch((err) => {
+      console.log(err);
+      if (err.code === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find forum by slug ${req.params.slug}`,
+          });
+      }
+    });
+}
 
 module.exports = {
   createThread,
   getThreads,
+  getThreadInfo,
 };

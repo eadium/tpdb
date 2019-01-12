@@ -1,21 +1,13 @@
 const dbConfig = require('../../config/db');
-const Forum = require('../models/forum');
+// const Forum = require('../models/forum');
 
 const db = dbConfig.db;
 
 async function createForum(req, reply) {
-  const f = new Forum({
-    posts: 0,
-    slug: req.body.slug,
-    threads: 0,
-    title: req.body.title,
-    user: req.body.user,
-  });
-
   db.one({
     text: `INSERT INTO forums (slug, title, "user") VALUES
     ($1, $2, (SELECT nickname FROM users WHERE nickname=$3)) RETURNING *`,
-    values: [f.slug, f.title, f.user],
+    values: [req.body.slug, req.body.title, req.body.user],
   })
     .then((data) => {
     //   console.log(data);
@@ -27,7 +19,7 @@ async function createForum(req, reply) {
       if (err.code === dbConfig.dataConflict) {
         db.one({
           text: 'SELECT slug, title, "user" FROM forums WHERE slug=$1',
-          values: [f.slug],
+          values: [req.body.slug],
         })
           .then((data) => {
             console.log(data);
@@ -44,7 +36,7 @@ async function createForum(req, reply) {
 }
 
 async function getForumInfo(req, reply) {
-  db.any({
+  db.one({
     text: 'SELECT * FROM forums WHERE slug=$1;',
     values: [req.params.slug],
   })
@@ -55,9 +47,8 @@ async function getForumInfo(req, reply) {
             message: `Can't find forum by slug ${req.params.slug}`,
           });
       }
-      const f = data.map(existingForum => new Forum(existingForum))[0];
       reply.code(200)
-        .send(f);
+        .send(data);
     })
     .catch((err) => {
       console.log(err);

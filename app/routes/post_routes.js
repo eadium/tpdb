@@ -13,10 +13,6 @@ async function createPost(req, reply) {
 
   const posts = req.body;
 
-  if (posts.length === 0) {
-    reply.code(201).send([]);
-  }
-
   // console.log(sql, req.params.slug)
 
   db.one({
@@ -24,8 +20,10 @@ async function createPost(req, reply) {
     values: req.params.slug,
   })
     .then((threadForumInfo) => {
-  // console.log('threadForumInfo', threadForumInfo)
-
+    // console.log('threadForumInfo', threadForumInfo)
+      if (posts.length === 0) {
+        reply.code(201).send([]);
+      }
       if (threadForumInfo.length === 0) {
         reply.code(404)
           .send({
@@ -86,7 +84,7 @@ async function createPost(req, reply) {
           reply.code(201).send(result);
         })
         .catch((error) => {
-          if (error.constraint === 'post_user') {
+/*           if (error.code === 'post_user') {
             reply.code(404)
               .send({
                 message: "Can't find user with id #42",
@@ -96,11 +94,26 @@ async function createPost(req, reply) {
               .send({
                 message: "Can't find user with id #42",
               });
-          } else { reply.code(500).send(error); }
+          } else */ if (error.code === dbConfig.dataDoesNotExist) {
+            reply.code(404).send({
+              message: "Can't find user with id #42",
+            });
+          } else {
+            console.log(error);
+            reply.code(500).send(error);
+          }
         });
     })
     .catch((err) => {
-      reply.code(500).send(err);
+      console.log(err);
+      if (err.code === 0) {
+        reply.code(404)
+          .send({
+            message: "Can't find user with id #42",
+          });
+      } else {
+        reply.code(500).send(err);
+      }
     });
 }
 
