@@ -280,7 +280,7 @@ async function getPostsBySlug(req, reply, slug) {
     text: sql,
     values: args,
   })
-    .then((data) => {
+    .then(async (data) => {
       if (data.length === 0) {
         console.log('data: ', data);
 
@@ -292,27 +292,25 @@ async function getPostsBySlug(req, reply, slug) {
         }
 
         console.log(query, slugOrId);
-        db.one({
+        await db.one({
           text: query,
           values: slugOrId,
         })
           .then((threadForumInfo) => {
             console.log(threadForumInfo);
             if (threadForumInfo.length === 0) {
-              console.log('lol')
               reply.code(404)
                 .send({
                   message: "Can't find thread with id #42",
                 });
             } else {
-              reply.code(500)
-                .send(threadForumInfo);
+              reply.code(200)
+                .send([]);
             }
           })
           .catch((error) => {
             console.log(error);
             if (error.code === 0) {
-              console.log('wow')
               reply.code(404)
                 .send({
                   message: "Can't find thread with id #42",
@@ -324,7 +322,6 @@ async function getPostsBySlug(req, reply, slug) {
           });
       }
 
-      console.log(data, data.length);
       reply.code(200)
         .send(data);
     })
