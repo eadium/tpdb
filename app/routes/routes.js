@@ -19,4 +19,5 @@ module.exports = (app) => {
   app.post('/api/thread/:slug/create', posts.createPost);
   app.post('/api/thread/:slug/vote', votes.createVote);
   app.get('/api/thread/:slug/details', threads.getThreadInfo);
+  app.get('/api/thread/:slug/posts', threads.getPosts);
 };

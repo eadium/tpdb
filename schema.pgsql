@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS threads (
 
 CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
 
+----------------------------- POSTS ------------------------------
+
 CREATE TABLE posts (
   id SERIAL PRIMARY KEY,
   path INTEGER[],
@@ -58,6 +60,28 @@ CREATE INDEX idx_post_thread_id ON posts(thread_id);
 CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
 CREATE INDEX idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);
+
+CREATE FUNCTION update_path()
+  RETURNS TRIGGER AS '
+    BEGIN
+    IF NEW.parent_id = NULL THEN
+      UPDATE posts
+        SET path = array_append(NEW.path, NEW.id)
+        WHERE id=NEW.id;
+        RETURN NULL;
+    END IF;
+      UPDATE posts
+        SET path = array_append(
+            (SELECT path FROM posts WHERE id=NEW.parent_id), NEW.id)
+        WHERE id=NEW.id;
+        RETURN NULL;
+    END;
+' LANGUAGE plpgsql;
+
+CREATE TRIGGER on_insert_post_update_path
+AFTER INSERT ON posts
+FOR EACH ROW EXECUTE PROCEDURE update_path();
+
 
 ------------------------------ VOTES ------------------------------
 
