@@ -20,4 +20,7 @@ module.exports = (app) => {
   app.post('/api/thread/:slug/vote', votes.createVote);
   app.get('/api/thread/:slug/details', threads.getThreadInfo);
   app.get('/api/thread/:slug/posts', threads.getPosts);
+  app.post('/api/thread/:slug/details', threads.updateThread);
+  app.get('/api/forum/:slug/users', forums.getForumUsers);
+  app.get('/api/post/:slug/details', posts.getPostInfo);
 };

@@ -61,7 +61,89 @@ async function getForumInfo(req, reply) {
     });
 }
 
+async function getForumUsers(req, reply) {
+  const { desc } = req.query;
+  const { limit } = req.query;
+  const { since } = req.query;
+  const { slug } = req.params;
+
+  let query = `
+    SELECT U.nickname, U.about, U.fullname, U.email FROM fusers
+      LEFT JOIN users U ON fusers.username = U.nickname
+      WHERE fusers.forum_slug = $1
+    `;
+  const args = [slug];
+  let i = 2;
+  if (since !== undefined) {
+    if (desc === 'true') {
+      query += ` AND U.nickname < $${i++} COLLATE "C" `;
+    } else {
+      query += ` AND U.nickname > $${i++} COLLATE "C" `;
+    }
+    args.push(since);
+  }
+  if (desc === 'true') {
+    query += ' ORDER BY U.nickname COLLATE "C" DESC ';
+  } else {
+    query += ' ORDER BY U.nickname COLLATE "C" ASC ';
+  }
+  if (limit !== undefined) {
+    query += ` LIMIT $${i++}`;
+    args.push(limit);
+  }
+
+  console.log(query, args);
+
+  db.any({
+    text: query,
+    values: args,
+  })
+    .then((data) => {
+      if (data.length === 0) {
+
+        db.one({
+          text: 'SELECT id FROM forums WHERE slug = $1 LIMIT 1',
+          values: [slug],
+        })
+          .then((forumInfo) => {
+            if (forumInfo.length !== 0) {
+              reply.code(200).send([]);
+            } else {
+              reply.code(500)
+                .send({
+                  message: 'Everything is empty',
+                  forumInfo,
+                });
+            }
+          })
+          .catch((error) => {
+            if (error.code === 0) {
+              reply.code(404)
+                .send({
+                  message: `Can't find forum by slug ${slug}`,
+                });
+            } else {
+              reply.code(500).send(error);
+            }
+          });
+      } else {
+        reply.code(200).send(data);
+      }
+    })
+    .catch((err) => {
+      if (err.code === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find forum by slug ${slug}`,
+          });
+      } else {
+        reply.code(500).send(err);
+      }
+    });
+}
+
 module.exports = {
   createForum,
   getForumInfo,
+  getForumUsers,
 };

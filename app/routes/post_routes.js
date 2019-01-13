@@ -1,7 +1,7 @@
 const dbConfig = require('../../config/db');
 const Post = require('../models/post');
 
-const db = dbConfig.db;
+const { db } = dbConfig;
 
 async function createPost(req, reply) {
   let sql = 'SELECT id AS thread_id, forum AS forum FROM threads WHERE ';
@@ -117,6 +117,59 @@ async function createPost(req, reply) {
     });
 }
 
+async function getPostInfo(req, reply) {
+  const related = req.query.related;
+  const { id } = req.params;
+  console.log(related);
+
+  let query;
+  if (related === undefined) {
+    query = `
+      SELECT id, parent_id AS parent, thread_id AS thread,
+        message, isEdited, created, forum_slug AS forum,
+        author FROM post WHERE id = $1 LIMIT 1
+    `
+
+    db.one({
+      text: query,
+      values: [id],
+    })
+      .then((data) => {
+
+      })
+      .catch((err) => {
+        console.log(err);
+        if (err.code === 0) {
+          
+        }
+      });
+
+    let postInfo = await database.query('SELECT id, post.parent, post.thread, post.message, post."isEdited", post.created, post.forumslug AS forum, post.user_nn AS author FROM post WHERE post.id = $1 LIMIT 1', [id]);
+    if (postInfo.rowCount == 0) {
+        reject({'code': 404, 'data': {'message': 'Can\'t find post with id: ' + id}});
+        return;
+    }
+    postInfo = postInfo.rows[0];
+    postInfo.id = parseInt(postInfo.id);
+    postInfo.thread = parseInt(postInfo.thread);
+    if (!postInfo.isEdited)
+    {
+        postInfo.isEdited = undefined;
+    }
+    if (postInfo.parent == null)
+    {
+        postInfo.parent = undefined;
+    }
+    else
+    {
+        postInfo.parent = parseInt(postInfo.parent);
+    }
+    result.post = postInfo;
+  }
+
+}
+
 module.exports = {
   createPost,
+  getPostInfo,
 };

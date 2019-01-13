@@ -128,8 +128,8 @@ async function getThreads(req, reply) {
 
 async function getThreadInfo(req, reply) {
   let sql = `
-    SELECT author, created, forum, id, message, slug, title FROM threads
-      WHERE 
+    SELECT author, created, forum, id, message, votes, slug, title FROM threads
+      WHERE
   `;
   if (isNaN(req.params.slug)) {
     sql += ' slug = $1';
@@ -165,10 +165,10 @@ async function getThreadInfo(req, reply) {
 async function getPostsBySlug(req, reply, slug) {
   const slugOrId = slug;
 
-  const limit = req.query.limit;
-  const since = req.query.since;
-  let sort = req.query.sort;
-  const desc = req.query.desc;
+  const { limit } = req.query;
+  const { since } = req.query;
+  let { sort } = req.query;
+  const { desc } = req.query;
 
   if (sort === undefined) {
     sort = 'flat';
@@ -280,9 +280,10 @@ async function getPostsBySlug(req, reply, slug) {
     text: sql,
     values: args,
   })
-    .then((res) => {
-      const data = res;
+    .then((data) => {
       if (data.length === 0) {
+        console.log('data: ', data);
+
         let query = 'SELECT threads.id FROM threads WHERE ';
         if (isNaN(slugOrId)) {
           query += 'threads.slug = $1 LIMIT 1';
@@ -290,45 +291,57 @@ async function getPostsBySlug(req, reply, slug) {
           query += 'threads.id = $1 LIMIT 1';
         }
 
-        db.any({
+        console.log(query, slugOrId);
+        db.one({
           text: query,
           values: slugOrId,
         })
           .then((threadForumInfo) => {
+            console.log(threadForumInfo);
             if (threadForumInfo.length === 0) {
+              console.log('lol')
               reply.code(404)
                 .send({
-                  message: "Can't find user with id #42",
+                  message: "Can't find thread with id #42",
                 });
+            } else {
+              reply.code(500)
+                .send(threadForumInfo);
             }
           })
           .catch((error) => {
             console.log(error);
-            reply.code(500)
-              .send(error);
+            if (error.code === 0) {
+              console.log('wow')
+              reply.code(404)
+                .send({
+                  message: "Can't find thread with id #42",
+                });
+            } else {
+              reply.code(500)
+                .send(error);
+            }
           });
       }
 
-      for (let i = 0; i < data.rowCount; i++) {
-        data.rows[i].id = parseInt(data.rows[i].id, 10);
-        data.rows[i].threads = parseInt(data.rows[i].thread, 10);
-        if (data.rows[i].parent != null) {
-          data.rows[i].parent = parseInt(data.rows[i].parent, 10);
-        } else {
-          data.rows[i].parent = undefined;
-        }
-      }
+      console.log(data, data.length);
       reply.code(200)
-        .send(res);
+        .send(data);
     })
     .catch((err) => {
       console.log(err);
-      reply.code(500).send(err);
+      if (err.code === 0) {
+        reply.code(404)
+          .send({
+            message: "Can't find thread with id #42",
+          });
+      } else {
+        reply.code(500).send(err);
+      }
     });
 }
 
 async function getPosts(req, reply) {
-
   if (!isNaN(req.params.slug)) {
     db.one({
       text: 'SELECT slug FROM threads WHERE id=$1',
@@ -339,11 +352,93 @@ async function getPosts(req, reply) {
       })
       .catch((err) => {
         console.log(err);
-        reply.code(500).send(err);
+        reply.code(404)
+          .send({
+            message: "Can't find thread with id #42",
+          });
       });
   } else {
     getPostsBySlug(req, reply, req.params.slug);
   }
+}
+
+async function updateThread(req, reply) {
+
+  let sql;
+  let args = [];
+  let i = 1;
+
+  const title = req.body.title;
+  const message = req.body.message;
+
+  if (title === undefined && message === undefined) {
+    sql = `
+      SELECT created, id, title,
+        slug, message, author, forum
+        FROM threads WHERE
+    `;
+    if (isNaN(req.params.slug)) {
+      sql += 'slug = $1 LIMIT 1';
+    } else {
+      sql += 'id = $1 LIMIT 1';
+    }
+    args = [req.params.slug];
+  } else {
+    sql = 'UPDATE threads SET ';
+    if (title !== undefined) {
+      sql += `title = $${i++},`;
+      args.push(title);
+    }
+
+    if (message !== undefined) {
+      sql += `message = $${i++},`;
+      args.push(message);
+    }
+    sql = sql.slice(0, -1);
+    sql += ' WHERE ';
+    if (isNaN(req.params.slug)) {
+      sql += `
+        slug = $${i++}
+        RETURNING created, id, title,
+          slug, message,
+          author, forum
+      `;
+    } else {
+      sql += `
+        id = $${i++}
+        RETURNING created, id, title,
+          slug, message,
+          author, forum
+      `;
+    }
+    args.push(req.params.slug);
+  }
+
+  db.one({
+    text: sql,
+    values: args,
+  })
+    .then((data) => {
+      if (data.length === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find thread by slug: ${req.params.slug}`,
+          });
+      } else {
+        reply.code(200).send(data);
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      if (err.code === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find thread by slug: ${req.params.slug}`,
+          })
+      } else {
+        reply.code(500).send(err);
+      }
+    });
 }
 
 module.exports = {
@@ -351,4 +446,5 @@ module.exports = {
   getThreads,
   getThreadInfo,
   getPosts,
+  updateThread,
 };
