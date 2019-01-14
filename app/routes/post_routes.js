@@ -20,7 +20,7 @@ async function createPost(req, reply) {
     values: req.params.slug,
   })
     .then((threadForumInfo) => {
-    // console.log('threadForumInfo', threadForumInfo)
+      console.log('threadForumInfo', threadForumInfo)
       if (posts.length === 0) {
         reply.code(201).send([]);
       }
@@ -38,7 +38,15 @@ async function createPost(req, reply) {
 
       for (let j = 0; j < posts.length; j++) {
         if (posts[j].parent !== undefined) {
-          sql += `($${i}, $${(i + 1)}, $${(i + 2)},$${(i + 3)} , $${(i + 4)}),`;
+          sql += `($${i}, $${i + 1}, (
+              SELECT (
+                CASE WHEN
+                EXISTS (
+                    SELECT 1 FROM posts p WHERE p.id=$${i + 3}
+                      AND p.thread_id=$${i + 2}
+                  )
+                THEN $${i + 2} ELSE NULL END)
+            ), $${i + 3}, $${i + 4}),`;
           i += 5;
           args.push(
             ...[posts[j].author,
@@ -48,7 +56,7 @@ async function createPost(req, reply) {
               threadForumInfo.forum],
           );
         } else {
-          sql += `($${i}, $${(i + 1)}, $${(i + 2)}, NULL, $${(i + 3)}),`;
+          sql += `($${i}, $${i + 1}, $${i + 2}, NULL, $${i + 3}),`;
           i += 4;
           args.push(
             ...[posts[j].author,
@@ -63,38 +71,39 @@ async function createPost(req, reply) {
       sql += ` RETURNING author, id, created,
         thread_id AS thread, parent_id AS parent, forum_slug AS forum, message`;
 
-      // console.log(sql, args)
+      console.log(sql, args);
 
       db.any(({
         text: sql,
         values: args,
       }))
         .then((data) => {
-          const result = data;
-          for (let k = 0; k < result.rowCount; k++) {
-            result.rows[k].id = parseInt(result.rows[k].id, 10);
-            result.rows[k].thread = parseInt(result.rows[k].thread, 10);
-            if (result.rows[k].parent == null) {
-              result.rows[k].parent = undefined;
-            } else {
-              result.rows[k].parent = parseInt(result.rows[k].parent, 10);
-            }
-          }
+          // const result = data;
+          // for (let k = 0; k < result.rowCount; k++) {
+          //   result.rows[k].id = parseInt(result.rows[k].id, 10);
+          //   result.rows[k].thread = parseInt(result.rows[k].thread, 10);
+          //   if (result.rows[k].parent == null) {
+          //     result.rows[k].parent = undefined;
+          //   } else {
+          //     result.rows[k].parent = parseInt(result.rows[k].parent, 10);
+          //   }
+          // }
 
-          reply.code(201).send(result);
+          reply.code(201).send(data);
         })
         .catch((error) => {
-/*           if (error.code === 'post_user') {
-            reply.code(404)
-              .send({
-                message: "Can't find user with id #42",
-              });
-          } else if (error.routine === 'exec_stmt_raise') {
+          console.log(error);
+          if (error.code === dbConfig.notNullErorr) {
             reply.code(409)
               .send({
-                message: "Can't find user with id #42",
+                message: 'Parent post was created in another thread',
               });
-          } else */ if (error.code === dbConfig.dataDoesNotExist) {
+          } else if (error.code === dbConfig.dataDoesNotExist) {
+            reply.code(404)
+              .send({
+                message: 'User not found',
+              });
+          } else if (error.code === dbConfig.notNullErorr) {
             reply.code(404).send({
               message: "Can't find user with id #42",
             });

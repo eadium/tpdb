@@ -83,9 +83,9 @@ CREATE TABLE posts (
   created TIMESTAMPTZ DEFAULT now(),
   edited BOOLEAN,
   message TEXT,
-  parent_id INTEGER REFERENCES posts(id),
+  parent_id INTEGER,
   forum_slug CITEXT NOT NULL,
-  thread_id INTEGER REFERENCES threads NOT NULL
+  thread_id INTEGER NOT NULL
 );
 
 CREATE INDEX idx_post_id ON posts(id);
@@ -114,6 +114,19 @@ CREATE FUNCTION update_path()
 CREATE TRIGGER on_insert_post_update_path
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE update_path();
+
+CREATE FUNCTION find_parent_id(pid INT, tid INT)
+  RETURNS INT AS '
+  BEGIN
+    PERFORM FROM posts
+      WHERE parent_id = pid AND thread_id = tid;
+    IF NOT FOUND
+      THEN RETURN NULL;
+    ELSE
+      RETURN tid;
+    END IF;
+  END;
+  ' LANGUAGE plpgsql;
 
 CREATE FUNCTION posts_forum_counter()
   RETURNS TRIGGER AS '
