@@ -30,14 +30,14 @@ async function createPost(req, reply) {
           });
       }
 
-      sql = 'INSERT INTO posts (author, message, thread_id, parent_id, forum_slug) VALUES ';
+      sql = 'INSERT INTO posts (edited, author, message, thread_id, parent_id, forum_slug) VALUES ';
 
       const args = [];
       let i = 1;
 
       for (let j = 0; j < posts.length; j++) {
         if (posts[j].parent !== undefined) {
-          sql += `($${i}, $${i + 1}, (
+          sql += `( FALSE, $${i}, $${i + 1}, (
               SELECT (
                 CASE WHEN
                 EXISTS (
@@ -55,7 +55,7 @@ async function createPost(req, reply) {
               threadForumInfo.forum],
           );
         } else {
-          sql += `($${i}, $${i + 1}, $${i + 2}, NULL, $${i + 3}),`;
+          sql += `( FALSE, $${i}, $${i + 1}, $${i + 2}, NULL, $${i + 3}),`;
           i += 4;
           args.push(
             ...[posts[j].author,
@@ -133,7 +133,7 @@ async function getPostInfo(req, reply) {
   if (related === undefined) {
     query = `
       SELECT id, parent_id AS parent, thread_id AS thread,
-        message, edited, created, forum_slug AS forum,
+        message, edited AS "isEdited", created, forum_slug AS forum,
         author FROM posts WHERE id = $1 LIMIT 1
     `;
 
@@ -251,7 +251,60 @@ async function getPostInfo(req, reply) {
   }
 }
 
+async function updatePost(req, reply) {
+  let query;
+  const args = [];
+
+  if (req.body.message === undefined) {
+    query = `
+      SELECT id, author, message, created,
+      forum_slug AS forum,
+      thread_id AS thread
+      FROM posts WHERE id=$1
+      `;
+    args.push(req.params.id);
+  } else {
+    query = `
+    UPDATE posts SET edited = message <> $1, message = $1
+      WHERE id = $2
+      RETURNING id, message, author, created, forum_slug AS forum,
+        parent_id AS parent, thread_id AS thread, edited AS "isEdited"
+
+    `;
+    args.push(req.body.message, req.params.id);
+  }
+
+  console.log(query, args);
+
+  db.one(query, args)
+    .then((data) => {
+      if (data.length === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find post by id ${req.params.id}`,
+          });
+      }
+      reply.code(200)
+        .send(data);
+    })
+    .catch((err) => {
+      console.log(err);
+      if (err.code === 0) {
+        reply.code(404)
+          .send({
+            message: `Can't find post by id ${req.params.id}`,
+          });
+      } else if (err.code === dbConfig.dataConflict) {
+        reply.code(409)
+          .send({
+            message: "Can't find user with id #42",
+          });
+      }
+    });
+}
+
 module.exports = {
   createPost,
   getPostInfo,
+  updatePost,
 };

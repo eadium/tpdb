@@ -26,4 +26,5 @@ module.exports = (app) => {
   app.get('/api/post/:slug/details', posts.getPostInfo);
   app.get('/api/service/status', service.status);
   app.post('/api/service/clear', service.clear);
+  app.post('/api/post/:id/details', posts.updatePost);
 };

@@ -143,6 +143,34 @@ CREATE TRIGGER add_user_to_forum
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum();
 
+CREATE FUNCTION set_edited()
+  RETURNS TRIGGER AS '
+    BEGIN
+      IF (NEW.message = OLD.message)
+        THEN RETURN NULL;
+      END IF;
+        UPDATE posts SET edited = TRUE
+          WHERE id=NEW.id;
+        RETURN NULL;
+    END;
+  ' LANGUAGE plpgsql;
+
+CREATE TRIGGER set_edited
+AFTER UPDATE ON posts
+FOR EACH ROW EXECUTE PROCEDURE set_edited();
+
+CREATE FUNCTION check_edited(pid INT, message TEXT)
+  RETURNS BOOLEAN AS '
+    BEGIN
+      IF (
+          (SELECT posts.message FROM posts WHERE id=pid) = message
+        )
+        THEN RETURN FALSE;
+      END IF;
+        RETURN TRUE;
+    END;
+  ' LANGUAGE plpgsql;
+
 ------------------------------ VOTES ------------------------------
 
 CREATE TABLE IF NOT EXISTS votes (
