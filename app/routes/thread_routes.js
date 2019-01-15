@@ -1,7 +1,6 @@
 const dbConfig = require('../../config/db');
-const Threads = require('../models/thread');
 
-const db = dbConfig.db;
+const { db } = dbConfig;
 
 async function createThread(req, reply) {
   const slug = req.body.slug ? req.body.slug : req.params.slug;

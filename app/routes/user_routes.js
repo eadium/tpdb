@@ -1,12 +1,9 @@
-// import User from '../models/user';
 const User = require('../models/user');
 const dbConfig = require('../../config/db');
 
-const db = dbConfig.db;
-// const queries = require('../queries/user_queries');
+const { db } = dbConfig;
 
-
-async function createUser(req, reply, next) {
+async function createUser(req, reply) {
   const user = new User({
     nickname: req.params.nickname,
     fullname: req.body.fullname,
@@ -33,9 +30,8 @@ async function createUser(req, reply, next) {
         })
           .then((data) => {
             console.log(data);
-            const newUsers = data.map(existingUser => new User(existingUser));
             reply.code(409)
-              .send(newUsers);
+              .send(data);
           })
           .catch((error) => {
             console.log(error);
@@ -73,7 +69,7 @@ async function getUserInfo(req, reply) {
     });
 }
 
-async function updateUserInfo(req, reply, next) {
+async function updateUserInfo(req, reply) {
   let query = 'UPDATE users SET ';
   if (req.body.fullname) {
     query += `fullname = '${req.body.fullname}', `;

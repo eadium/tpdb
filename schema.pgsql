@@ -115,19 +115,6 @@ CREATE TRIGGER on_insert_post_update_path
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE update_path();
 
-CREATE FUNCTION find_parent_id(pid INT, tid INT)
-  RETURNS INT AS '
-  BEGIN
-    PERFORM FROM posts
-      WHERE parent_id = pid AND thread_id = tid;
-    IF NOT FOUND
-      THEN RETURN NULL;
-    ELSE
-      RETURN tid;
-    END IF;
-  END;
-  ' LANGUAGE plpgsql;
-
 CREATE FUNCTION posts_forum_counter()
   RETURNS TRIGGER AS '
     BEGIN

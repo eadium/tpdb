@@ -1,18 +1,21 @@
-// const express = require('express');
 const app = require('fastify')({
-  logger: {
-    level: 'error',
-  },
+  // logger: {
+  //   level: 'error',
+  // },
 });
-// const bodyParser = require('body-parser');
+
+app.addContentTypeParser('application/json',
+  { parseAs: 'buffer' },
+  (req, body, done) => {
+    if (body.length > 0) {
+      done(null, JSON.parse(body));
+    } else {
+      done(null, {});
+    }
+  });
+
 const logger = require('morgan');
 
-// const app = express();
-
-// app.use(bodyParser.urlencoded({
-//   extended: true,
-// }));
-// app.use(bodyParser.json());
 app.use(logger('dev'));
 
 require('./routes/routes')(app);

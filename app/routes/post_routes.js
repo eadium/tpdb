@@ -1,5 +1,4 @@
 const dbConfig = require('../../config/db');
-const Post = require('../models/post');
 
 const { db } = dbConfig;
 
@@ -78,17 +77,6 @@ async function createPost(req, reply) {
         values: args,
       }))
         .then((data) => {
-          // const result = data;
-          // for (let k = 0; k < result.rowCount; k++) {
-          //   result.rows[k].id = parseInt(result.rows[k].id, 10);
-          //   result.rows[k].thread = parseInt(result.rows[k].thread, 10);
-          //   if (result.rows[k].parent == null) {
-          //     result.rows[k].parent = undefined;
-          //   } else {
-          //     result.rows[k].parent = parseInt(result.rows[k].parent, 10);
-          //   }
-          // }
-
           reply.code(201).send(data);
         })
         .catch((error) => {

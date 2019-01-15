@@ -4,6 +4,7 @@ const forums = require('./forum_routes');
 const threads = require('./thread_routes');
 const posts = require('./post_routes');
 const votes = require('./vote_routes');
+const service = require('./service_routes');
 
 // const router = express.Router;
 
@@ -23,4 +24,6 @@ module.exports = (app) => {
   app.post('/api/thread/:slug/details', threads.updateThread);
   app.get('/api/forum/:slug/users', forums.getForumUsers);
   app.get('/api/post/:slug/details', posts.getPostInfo);
+  app.get('/api/service/status', service.status);
+  app.post('/api/service/clear', service.clear);
 };
