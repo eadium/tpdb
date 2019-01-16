@@ -29,7 +29,6 @@ async function createUser(req, reply) {
           values: [user.nickname, user.email],
         })
           .then((data) => {
-            console.log(data);
             reply.code(409)
               .send(data);
           })

@@ -43,7 +43,7 @@ async function createVote(req, reply) {
 
   // queryData.text += selectQuery;
 
-  console.log(queryData);
+  // console.log(queryData);
 
   db.none(queryData)
     .then(() => {

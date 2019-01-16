@@ -21,8 +21,8 @@ CREATE UNIQUE INDEX idx_users_email    ON users(email);
 
 CREATE TABLE IF NOT EXISTS forums (
   id      BIGSERIAL PRIMARY KEY,
-  posts   INT    NOT NULL DEFAULT 0,
   slug    CITEXT,
+  posts   INT    NOT NULL DEFAULT 0,
   threads INT       NOT NULL DEFAULT 0,
   title   TEXT      NOT NULL,
   "user"  CITEXT      NOT NULL
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS threads (
   created   TIMESTAMPTZ DEFAULT now(),
   forum     CITEXT        NOT NULL REFERENCES forums(slug),
   message   TEXT        NOT NULL,
-  slug      CITEXT      DEFAULT NULL UNIQUE,
+  slug      CITEXT      NOT NULL UNIQUE,
   title     TEXT        NOT NULL,
   votes     INT         NOT NULL DEFAULT 0
 );
@@ -59,19 +59,19 @@ CREATE TRIGGER increase_forum_threads
 AFTER INSERT ON threads
 FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
 
-CREATE FUNCTION add_user_to_forum_thread()
-  RETURNS TRIGGER AS '
-    BEGIN
-      INSERT INTO fusers(forum_slug, username)
-        VALUES (NEW.forum, NEW.author)
-          ON CONFLICT DO NOTHING;
-      RETURN NULL;
-    END;
-  ' LANGUAGE plpgsql;
+-- CREATE FUNCTION add_user_to_forum_thread()
+--   RETURNS TRIGGER AS '
+--     BEGIN
+--       INSERT INTO fusers(forum_slug, username)
+--         VALUES (NEW.forum, NEW.author)
+--           ON CONFLICT DO NOTHING;
+--       RETURN NULL;
+--     END;
+--   ' LANGUAGE plpgsql;
 
-CREATE TRIGGER add_user_to_forum_thread
-AFTER INSERT ON threads
-FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum_thread();
+-- CREATE TRIGGER add_user_to_forum_thread
+-- AFTER INSERT ON threads
+-- FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum_thread();
 
 
 ----------------------------- POSTS -------------------------------
@@ -115,33 +115,33 @@ CREATE TRIGGER on_insert_post_update_path
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE update_path();
 
-CREATE FUNCTION posts_forum_counter()
-  RETURNS TRIGGER AS '
-    BEGIN
-      UPDATE forums
-        SET posts = posts + 1
-          WHERE slug = NEW.forum_slug;
-      RETURN NULL;
-    END;
-' LANGUAGE plpgsql;
+-- CREATE FUNCTION posts_forum_counter()
+--   RETURNS TRIGGER AS '
+--     BEGIN
+--       UPDATE forums
+--         SET posts = posts + 1
+--           WHERE slug = NEW.forum_slug;
+--       RETURN NULL;
+--     END;
+-- ' LANGUAGE plpgsql;
 
-CREATE TRIGGER increase_forum_posts
-AFTER INSERT ON posts
-FOR EACH ROW EXECUTE PROCEDURE posts_forum_counter();
+-- CREATE TRIGGER increase_forum_posts
+-- AFTER INSERT ON posts
+-- FOR EACH ROW EXECUTE PROCEDURE posts_forum_counter();
 
-CREATE FUNCTION add_user_to_forum()
-  RETURNS TRIGGER AS '
-    BEGIN
-      INSERT INTO fusers(forum_slug, username)
-        VALUES (NEW.forum_slug, NEW.author)
-          ON CONFLICT DO NOTHING;
-      RETURN NULL;
-    END;
-  ' LANGUAGE plpgsql;
+-- CREATE FUNCTION add_user_to_forum()
+--   RETURNS TRIGGER AS '
+--     BEGIN
+--       INSERT INTO fusers(forum_slug, username)
+--         VALUES (NEW.forum_slug, NEW.author)
+--           ON CONFLICT DO NOTHING;
+--       RETURN NULL;
+--     END;
+--   ' LANGUAGE plpgsql;
 
-CREATE TRIGGER add_user_to_forum
-AFTER INSERT ON posts
-FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum();
+-- CREATE TRIGGER add_user_to_forum
+-- AFTER INSERT ON posts
+-- FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum();
 
 CREATE FUNCTION set_edited()
   RETURNS TRIGGER AS '
@@ -226,7 +226,7 @@ FOR EACH ROW EXECUTE PROCEDURE vote_update();
 CREATE TABLE fusers (
     forum_slug CITEXT NOT NULL ,
     username CITEXT NOT NULL,
-    CONSTRAINT cons_fusers UNIQUE (username, forum_slug)
+    -- CONSTRAINT cons_fusers UNIQUE (username, forum_slug)
 );
 
--- CREATE UNIQUE INDEX idx_forums_users    ON fusers("user", forum_slug);
+CREATE UNIQUE INDEX idx_forums_users    ON fusers(username, forum_slug);

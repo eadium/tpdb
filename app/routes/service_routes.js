@@ -8,7 +8,7 @@ async function status(req, reply) {
       SELECT COUNT(*) FROM forums) AS forum,
       (SELECT COUNT(*) FROM   users) AS "user",
       (SELECT COUNT(*) FROM threads) AS thread,
-      (SELECT COUNT(*) FROM   posts) AS post
+      (SELECT COUNT(*) FROM posts) AS post
     `;
 
   db.one(query)
@@ -29,6 +29,13 @@ async function clear(req, reply) {
   const query = `
     TRUNCATE TABLE fusers, votes, posts, threads, forums, users;
   `;
+
+  dbConfig.counter = {
+    forum: 0,
+    thread: 0,
+    user: 0,
+    post: 0,
+  };
 
   db.none(query)
     .then(() => {

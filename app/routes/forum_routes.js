@@ -22,7 +22,7 @@ async function createForum(req, reply) {
           values: [req.body.slug],
         })
           .then((data) => {
-            console.log(data);
+            // console.log(data);
             // const existingForum = data.map(tempForum => new Forum(tempForum));
             reply.code(409)
               .send(data);
@@ -68,9 +68,10 @@ async function getForumUsers(req, reply) {
   const { slug } = req.params;
 
   let query = `
-    SELECT U.nickname, U.about, U.fullname, U.email FROM fusers
-      LEFT JOIN users U ON fusers.username = U.nickname
-      WHERE fusers.forum_slug = $1
+    SELECT U.nickname, U.about, U.fullname, U.email
+      FROM (SELECT DISTINCT * FROM fusers WHERE forum_slug=$1) f
+      LEFT JOIN users U ON f.username = U.nickname
+      WHERE f.forum_slug = $1
     `;
   const args = [slug];
   let i = 2;
@@ -92,7 +93,7 @@ async function getForumUsers(req, reply) {
     args.push(limit);
   }
 
-  console.log(query, args);
+  // console.log(query, args);
 
   db.any({
     text: query,

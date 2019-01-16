@@ -14,9 +14,16 @@ const dataConflict = '23505';
 const dataDoesNotExist = '23503';
 const notFound = '42601';
 
+const counter = {
+  forum: 0,
+  thread: 0,
+  user: 0,
+  post: 0,
+};
 
 module.exports.dataDoesNotExist = dataDoesNotExist;
 module.exports.dataConflict = dataConflict;
 module.exports.notNullErorr = notNullErorr;
 module.exports.notFound = notFound;
+module.exports.counter = counter;
 module.exports.db = db;

@@ -11,6 +11,7 @@ async function createPost(req, reply) {
   }
 
   const posts = req.body;
+  const users = [];
 
   // console.log(sql, req.params.slug)
 
@@ -34,8 +35,13 @@ async function createPost(req, reply) {
 
       const args = [];
       let i = 1;
+      // dbConfig.counter.post += posts.length;
 
       for (let j = 0; j < posts.length; j++) {
+        if (!users.includes(posts[j].author)) {
+          users.push(posts[j].author);
+        }
+
         if (posts[j].parent !== undefined) {
           sql += `( FALSE, $${i}, $${i + 1}, (
               SELECT (
@@ -70,13 +76,29 @@ async function createPost(req, reply) {
       sql += ` RETURNING author, id, created,
         thread_id AS thread, parent_id AS parent, forum_slug AS forum, message`;
 
-      console.log(sql, args);
+      // console.log(sql, args);
 
       db.any(({
         text: sql,
         values: args,
       }))
-        .then((data) => {
+        .then(async (data) => {
+          await db.none({
+            text: 'UPDATE forums SET posts=forums.posts+$1 WHERE slug=$2',
+            values: [posts.length, threadForumInfo.forum],
+          });
+
+          // one more batch...
+          let usersSql = 'INSERT INTO fusers(forum_slug, username) VALUES ';
+          for (let l = 0; l < users.length; l++) {
+            usersSql += `('${threadForumInfo.forum}', '${users[l]}'),`;
+          }
+          usersSql = usersSql.slice(0, -1);
+          usersSql += ' ON CONFLICT DO NOTHING';
+          console.log(usersSql);
+          await db.none({
+            text: usersSql,
+          });
           reply.code(201).send(data);
         })
         .catch((error) => {
@@ -117,7 +139,6 @@ async function createPost(req, reply) {
 async function getPostInfo(req, reply) {
   const id = req.params.slug;
   const related = req.query.related;
-  console.log(related);
 
   let userRelated;
   let threadRelated;
@@ -274,7 +295,7 @@ async function updatePost(req, reply) {
     args.push(req.body.message, req.params.id);
   }
 
-  console.log(query, args);
+  console.log(query);
 
   db.one(query, args)
     .then((data) => {

@@ -26,8 +26,17 @@ async function createThread(req, reply) {
       slug,
     ],
   })
-    .then((data) => {
-    //   console.log(data);
+    .then(async (data) => {
+      // one more batch...
+      const usersSql = `
+        INSERT INTO fusers(forum_slug, username) VALUES
+          ($1, $2) ON CONFLICT DO NOTHING
+      `;
+      // console.log(usersSql);
+      await db.none({
+        text: usersSql,
+        values: [forum, req.body.author]
+      });
       reply.code(201)
         .send(data);
     })
@@ -344,6 +353,7 @@ async function getPosts(req, reply) {
       values: [req.params.slug],
     })
       .then((data) => {
+        console.log('data', data, req.params.slug);
         getPostsBySlug(req, reply, data.slug);
       })
       .catch((err) => {
