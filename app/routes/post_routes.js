@@ -46,7 +46,7 @@ async function insertForumUsersAtFill() {
     db.none(usersSql).catch(err => console.log(err));
     // await finishDB();
   } else if (!dbConfig.fusersInserted) {
-    console.log('FUNC ', !dbConfig.isFill);
+    // console.log('FUNC ', !dbConfig.isFill);
     // one more batch...
     let usersSql = 'INSERT INTO fusers(forum_slug, username) VALUES ';
     dbConfig.fusers.forEach((key, value) => {
