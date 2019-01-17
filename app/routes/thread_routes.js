@@ -41,7 +41,7 @@ async function createThread(req, reply) {
         .send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === dbConfig.dataConflict) {
         db.one({
           text: 'SELECT * FROM threads WHERE slug=$1',
@@ -53,7 +53,7 @@ async function createThread(req, reply) {
               .send(data);
           })
           .catch((error) => {
-            console.log(error);
+            // console.log(error);
             reply.code(500).send(error);
           });
       } else if (err.code === dbConfig.notNullErorr) {
@@ -62,7 +62,7 @@ async function createThread(req, reply) {
       } else {
         reply.code(500).send(err);
       }
-      console.log(err);
+      // console.log(err);
     });
 }
 
@@ -110,7 +110,7 @@ async function getThreads(req, reply) {
             reply.code(200).send(data);
           })
           .catch((error) => {
-            console.log(error);
+            // console.log(error);
             if (error.code === 0) {
               reply.code(404).send({
                 message: `Can't find threads by forum ${req.params.slug}`,
@@ -122,7 +122,7 @@ async function getThreads(req, reply) {
       }
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === dbConfig.notFound) {
         reply.code(404)
           .send({
@@ -160,7 +160,7 @@ async function getThreadInfo(req, reply) {
         .send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({
@@ -317,7 +317,7 @@ async function getPostsByID(req, reply, id) {
             }
           })
           .catch((error) => {
-            console.log(error);
+            // console.log(error);
             if (error.code === 0) {
               reply.code(404)
                 .send({
@@ -334,7 +334,7 @@ async function getPostsByID(req, reply, id) {
         .send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({
@@ -357,7 +357,7 @@ async function getPosts(req, reply) {
         getPostsByID(req, reply, data.id);
       })
       .catch((err) => {
-        console.log(err);
+        // console.log(err);
         reply.code(404)
           .send({
             message: "Can't find thread with id #42",
@@ -435,7 +435,7 @@ async function updateThread(req, reply) {
       }
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({

@@ -33,7 +33,7 @@ async function createUser(req, reply) {
               .send(data);
           })
           .catch((error) => {
-            console.log(error);
+            // console.log(error);
             reply.code(500)
               .send(error);
           });
@@ -58,7 +58,7 @@ async function getUserInfo(req, reply) {
         .send(user);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({
@@ -102,7 +102,7 @@ async function updateUserInfo(req, reply) {
         .send(user);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({

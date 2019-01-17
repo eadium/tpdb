@@ -35,7 +35,7 @@ async function status(req, reply) {
       reply.code(200).send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       reply.code(500).send(err);
     });
 }
@@ -57,7 +57,7 @@ async function clear(req, reply) {
       reply.code(200).send(null);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       reply.code(500).send(err);
     });
 }

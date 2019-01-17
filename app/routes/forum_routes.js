@@ -15,7 +15,7 @@ async function createForum(req, reply) {
         .send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === dbConfig.dataConflict) {
         db.one({
           text: 'SELECT slug, title, "user" FROM forums WHERE slug=$1',
@@ -31,7 +31,7 @@ async function createForum(req, reply) {
         reply.code(404)
           .send(err);
       }
-      console.log(err);
+      // console.log(err);
     });
 }
 
@@ -51,7 +51,7 @@ async function getForumInfo(req, reply) {
         .send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({

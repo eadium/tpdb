@@ -54,7 +54,7 @@ async function createVote(req, reply) {
         });
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       reply.code(404).send({
         message: 'Can\'t find user with id #42\n',
       });

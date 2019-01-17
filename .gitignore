@@ -3,3 +3,4 @@ node_modules/
 apitest
 *.html
 *.gz
+report.html

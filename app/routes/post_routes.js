@@ -171,7 +171,7 @@ async function createPost(req, reply) {
           reply.code(201).send(data);
         })
         .catch((error) => {
-          console.log(error);
+          // console.log(error);
           if (error.code === dbConfig.notNullErorr) {
             reply.code(409)
               .send({
@@ -187,13 +187,13 @@ async function createPost(req, reply) {
               message: "Can't find user with id #42",
             });
           } else {
-            console.log(error);
+            // console.log(error);
             reply.code(500).send(error);
           }
         });
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({
@@ -237,7 +237,7 @@ async function getPostInfo(req, reply) {
         });
       })
       .catch((err) => {
-        console.log(err);
+        // console.log(err);
         if (err.code === 0) {
           reply.code(404)
             .send({
@@ -327,7 +327,7 @@ async function getPostInfo(req, reply) {
         reply.code(200).send(response);
       })
       .catch((err) => {
-        console.log(err);
+        // console.log(err);
         if (err.code === 0) {
           reply.code(404)
             .send({
@@ -378,7 +378,7 @@ async function updatePost(req, reply) {
         .send(data);
     })
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
       if (err.code === 0) {
         reply.code(404)
           .send({
