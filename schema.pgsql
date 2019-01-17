@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS threads (
 );
 
 CREATE INDEX idx_threads_slug_created    ON threads(created);
+CREATE INDEX idx_thread_id               ON threads(id);
 
 CREATE FUNCTION threads_forum_counter()
   RETURNS TRIGGER AS '
@@ -199,6 +200,8 @@ CREATE TABLE fusers (
     username CITEXT NOT NULL,
     CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)
 );
+
+CREATE INDEX idx_fusers_slug ON fusers(forum_slug);
 
 ----------------------------- INDEXES ----------------------------------
 -- CREATE INDEX idx_threads_slug_created    ON threads(created);
