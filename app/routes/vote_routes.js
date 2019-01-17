@@ -17,25 +17,22 @@ async function createVote(req, reply) {
     queryData = {
       text: `INSERT INTO votes (thread_id, user_id, voice)
       VALUES (
-        (SELECT id FROM threads WHERE slug=$1),
-        (SELECT id FROM users WHERE nickname=$2),
-        $3
+        (SELECT id FROM threads WHERE slug=$1), $2, $3
       )
       ON CONFLICT ON CONSTRAINT votes_user_thread_unique
         DO UPDATE SET voice = $3
         WHERE votes.thread_id = (SELECT id FROM threads WHERE slug = $1)
-          AND votes.user_id = (SELECT id FROM users WHERE nickname=$2)
+          AND votes.user_id = $2
       `,
       values: [req.params.slug, req.body.nickname, req.body.voice],
     };
   } else {
     queryData = {
       text: `INSERT INTO votes (thread_id, user_id, voice)
-              VALUES ($1, (SELECT id FROM users WHERE nickname=$2), $3)
+              VALUES ($1, $2, $3)
               ON CONFLICT ON CONSTRAINT votes_user_thread_unique
               DO UPDATE SET voice = $3
-              WHERE votes.thread_id =
-                $1 AND votes.user_id = (SELECT id FROM users WHERE nickname=$2)
+              WHERE votes.thread_id = $1 AND votes.user_id = $2
       `,
       values: [+req.params.slug, req.body.nickname, req.body.voice],
     };

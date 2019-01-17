@@ -3,7 +3,7 @@ const dbConfig = require('../../config/db');
 const { db } = dbConfig;
 
 async function createThread(req, reply) {
-  const slug = req.body.slug ? req.body.slug : req.params.slug;
+  const slug = req.body.slug ? req.body.slug : null;
   const forum = req.body.forum ? req.body.forum : req.params.slug;
   let slugStr;
   if (req.body.slug) {
@@ -35,7 +35,7 @@ async function createThread(req, reply) {
       // console.log(usersSql);
       await db.none({
         text: usersSql,
-        values: [forum, req.body.author]
+        values: [forum, req.body.author],
       });
       reply.code(201)
         .send(data);
@@ -48,7 +48,7 @@ async function createThread(req, reply) {
           values: [slug],
         })
           .then((data) => {
-            console.log(data);
+            // console.log(data);
             reply.code(409)
               .send(data);
           })
@@ -94,7 +94,7 @@ async function getThreads(req, reply) {
     since = '';
   }
 
-  console.log(`SELECT * FROM threads WHERE forum=$1 ${since} ORDER BY created ${sort} ${limit}`)
+  // console.log(`SELECT * FROM threads WHERE forum=$1 ${since} ORDER BY created ${sort} ${limit}`);
 
   db.any({
     text: `SELECT * FROM threads WHERE forum=$1 ${since} ORDER BY created ${sort} ${limit};`,
@@ -170,8 +170,8 @@ async function getThreadInfo(req, reply) {
     });
 }
 
-async function getPostsBySlug(req, reply, slug) {
-  const slugOrId = slug;
+async function getPostsByID(req, reply, id) {
+  const slugOrId = id;
 
   const { limit } = req.query;
   const { since } = req.query;
@@ -186,7 +186,7 @@ async function getPostsBySlug(req, reply, slug) {
   if (sort === 'flat') {
     sql = `SELECT p.id, p.thread_id AS thread, p.created,
     p.message, p.parent_id AS parent, p.author, p.forum_slug AS forum FROM posts p
-    LEFT JOIN threads ON p.thread_id = threads.id WHERE threads.slug = $1`;
+    LEFT JOIN threads ON p.thread_id = threads.id WHERE threads.id = $1`;
     args = [slugOrId];
     let i = 2;
     if (since !== undefined) {
@@ -226,11 +226,11 @@ async function getPostsBySlug(req, reply, slug) {
           WHERE p.path || p.id > posts.path || posts.id
         `;
       }
-      sql += ` AND threads.slug = $${i++} ORDER BY p.path || p.id `;
+      sql += ` AND threads.id = $${i++} ORDER BY p.path || p.id `;
       args.push(since);
       args.push(slugOrId);
     } else {
-      sql += ` WHERE threads.slug = $${i++} ORDER BY p.path || p.id`;
+      sql += ` WHERE threads.id = $${i++} ORDER BY p.path || p.id`;
       args.push(slugOrId);
     }
 
@@ -254,7 +254,7 @@ async function getPostsBySlug(req, reply, slug) {
 
     sql += `
      FROM posts p LEFT JOIN threads
-      ON p.thread_id = threads.id WHERE threads.slug = $1)
+      ON p.thread_id = threads.id WHERE threads.id = $1)
       SELECT p.author, p.created, p.forum_slug AS forum,
           p.id, p.message, p.parent_id AS parent, p.thread_id AS thread
         FROM ranked_posts p `;
@@ -282,7 +282,7 @@ async function getPostsBySlug(req, reply, slug) {
     }
   }
 
-  console.log(sql, args);
+  // console.log(sql, args);
 
   db.any({
     text: sql,
@@ -290,22 +290,22 @@ async function getPostsBySlug(req, reply, slug) {
   })
     .then(async (data) => {
       if (data.length === 0) {
-        console.log('data: ', data);
+        // console.log('data: ', data);
 
         let query = 'SELECT threads.id FROM threads WHERE ';
         if (isNaN(slugOrId)) {
-          query += 'threads.slug = $1 LIMIT 1';
+          query += 'threads.id = $1 LIMIT 1';
         } else {
           query += 'threads.id = $1 LIMIT 1';
         }
 
-        console.log(query, slugOrId);
+        // console.log(query, slugOrId);
         await db.one({
           text: query,
           values: slugOrId,
         })
           .then((threadForumInfo) => {
-            console.log(threadForumInfo);
+            // console.log(threadForumInfo);
             if (threadForumInfo.length === 0) {
               reply.code(404)
                 .send({
@@ -347,14 +347,14 @@ async function getPostsBySlug(req, reply, slug) {
 }
 
 async function getPosts(req, reply) {
-  if (!isNaN(req.params.slug)) {
+  if (isNaN(req.params.slug)) {
     db.one({
-      text: 'SELECT slug FROM threads WHERE id=$1',
+      text: 'SELECT id FROM threads WHERE slug=$1',
       values: [req.params.slug],
     })
       .then((data) => {
-        console.log('data', data, req.params.slug);
-        getPostsBySlug(req, reply, data.slug);
+        // console.log('data', data, req.params.slug);
+        getPostsByID(req, reply, data.id);
       })
       .catch((err) => {
         console.log(err);
@@ -364,7 +364,7 @@ async function getPosts(req, reply) {
           });
       });
   } else {
-    getPostsBySlug(req, reply, req.params.slug);
+    getPostsByID(req, reply, req.params.slug);
   }
 }
 

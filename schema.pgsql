@@ -5,17 +5,28 @@ DROP TABLE IF EXISTS forums CASCADE;
 DROP TABLE IF EXISTS threads CASCADE;
 DROP TABLE IF EXISTS votes CASCADE;
 DROP TABLE IF EXISTS posts CASCADE;
+DROP TABLE IF EXISTS fusers CASCADE;
+
+DROP INDEX IF EXISTS idx_users_nickname;
+DROP INDEX IF EXISTS idx_users_email;
+DROP INDEX IF EXISTS idx_forums_slug;
+DROP INDEX IF EXISTS idx_threads_slug_created;
+DROP INDEX IF EXISTS idx_post_id;
+DROP INDEX IF EXISTS idx_post_thread_id;
+DROP INDEX IF EXISTS idx_post_cr_id;
+DROP INDEX IF EXISTS idx_post_thread_id_cr_i;
+DROP INDEX IF EXISTS idx_post_thread_id_p_i;
 
 CREATE TABLE IF NOT EXISTS users (
-  id       SERIAL    PRIMARY KEY,
-  about    TEXT,
-  email    CITEXT         NOT NULL,
+  -- id       SERIAL    PRIMARY KEY,
+  nickname CITEXT         NOT NULL PRIMARY KEY,
+  email    CITEXT         NOT NULL UNIQUE,
   fullname CITEXT         NOT NULL,
-  nickname CITEXT         NOT NULL
+  about    TEXT
 );
 
 CREATE UNIQUE INDEX idx_users_nickname ON users(nickname);
-CREATE UNIQUE INDEX idx_users_email    ON users(email);
+-- CREATE UNIQUE INDEX idx_users_email    ON users(email);
 
 ----------------------------- FORUMS ------------------------------
 
@@ -38,12 +49,12 @@ CREATE TABLE IF NOT EXISTS threads (
   created   TIMESTAMPTZ DEFAULT now(),
   forum     CITEXT        NOT NULL REFERENCES forums(slug),
   message   TEXT        NOT NULL,
-  slug      CITEXT      NOT NULL UNIQUE,
+  slug      CITEXT      UNIQUE,
   title     TEXT        NOT NULL,
   votes     INT         NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
+CREATE INDEX idx_threads_slug_created    ON threads(created);
 
 CREATE FUNCTION threads_forum_counter()
   RETURNS TRIGGER AS '
@@ -58,21 +69,6 @@ CREATE FUNCTION threads_forum_counter()
 CREATE TRIGGER increase_forum_threads
 AFTER INSERT ON threads
 FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
-
--- CREATE FUNCTION add_user_to_forum_thread()
---   RETURNS TRIGGER AS '
---     BEGIN
---       INSERT INTO fusers(forum_slug, username)
---         VALUES (NEW.forum, NEW.author)
---           ON CONFLICT DO NOTHING;
---       RETURN NULL;
---     END;
---   ' LANGUAGE plpgsql;
-
--- CREATE TRIGGER add_user_to_forum_thread
--- AFTER INSERT ON threads
--- FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum_thread();
-
 
 ----------------------------- POSTS -------------------------------
 
@@ -115,34 +111,6 @@ CREATE TRIGGER on_insert_post_update_path
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE update_path();
 
--- CREATE FUNCTION posts_forum_counter()
---   RETURNS TRIGGER AS '
---     BEGIN
---       UPDATE forums
---         SET posts = posts + 1
---           WHERE slug = NEW.forum_slug;
---       RETURN NULL;
---     END;
--- ' LANGUAGE plpgsql;
-
--- CREATE TRIGGER increase_forum_posts
--- AFTER INSERT ON posts
--- FOR EACH ROW EXECUTE PROCEDURE posts_forum_counter();
-
--- CREATE FUNCTION add_user_to_forum()
---   RETURNS TRIGGER AS '
---     BEGIN
---       INSERT INTO fusers(forum_slug, username)
---         VALUES (NEW.forum_slug, NEW.author)
---           ON CONFLICT DO NOTHING;
---       RETURN NULL;
---     END;
---   ' LANGUAGE plpgsql;
-
--- CREATE TRIGGER add_user_to_forum
--- AFTER INSERT ON posts
--- FOR EACH ROW EXECUTE PROCEDURE add_user_to_forum();
-
 CREATE FUNCTION set_edited()
   RETURNS TRIGGER AS '
     BEGIN
@@ -174,11 +142,12 @@ CREATE FUNCTION check_edited(pid INT, message TEXT)
 ------------------------------ VOTES ------------------------------
 
 CREATE TABLE IF NOT EXISTS votes (
-  user_id   INT REFERENCES users(id)   NOT NULL,
+  user_id   CITEXT REFERENCES users(nickname)   NOT NULL,
   thread_id INT REFERENCES threads(id) NOT NULL,
   -- author CITEXT NOT NULL REFERENCES users(nickname),
   -- slug      CITEXT      NOT NULL,
   voice     INT                           NOT NULL
+  -- CONSTRAINT votes_user_thread_unique UNIQUE (user_id, thread_id)
 );
 
 ALTER TABLE ONLY votes
@@ -224,9 +193,15 @@ FOR EACH ROW EXECUTE PROCEDURE vote_update();
 ----------------------------- FORUM_USERS -----------------------------
 
 CREATE TABLE fusers (
-    forum_slug CITEXT NOT NULL ,
+    forum_slug CITEXT NOT NULL,
     username CITEXT NOT NULL,
-    -- CONSTRAINT cons_fusers UNIQUE (username, forum_slug)
+    CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)
 );
 
-CREATE UNIQUE INDEX idx_forums_users    ON fusers(username, forum_slug);
+----------------------------- INDEXES ----------------------------------
+-- CREATE INDEX idx_threads_slug_created    ON threads(created);
+-- CREATE INDEX idx_post_id ON posts(id);
+-- CREATE INDEX idx_post_thread_id ON posts(thread_id);
+-- CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
+-- CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
+-- CREATE INDEX idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);

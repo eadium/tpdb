@@ -1,4 +1,5 @@
 package-lock.json
 node_modules/
 apitest
-report.html
+*.html
+*.gz

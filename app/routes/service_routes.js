@@ -2,6 +2,21 @@ const dbConfig = require('../../config/db');
 
 const { db } = dbConfig;
 
+async function ping(req, reply) {
+  // await db.none({
+  //   text: `
+  //     DROP INDEX IF EXISTS
+  //       idx_post_id,
+  //       idx_post_thread_id,
+  //       idx_post_cr_id,
+  //       idx_post_thread_id_cr_i,
+  //       idx_post_thread_id_p_i CASCADE;
+  //   `,
+  // });
+
+  reply.code(200).send({});
+}
+
 async function status(req, reply) {
   const query = `
     SELECT (
@@ -50,4 +65,5 @@ async function clear(req, reply) {
 module.exports = {
   status,
   clear,
+  ping,
 };

@@ -2,6 +2,68 @@ const dbConfig = require('../../config/db');
 
 const { db } = dbConfig;
 
+
+async function finishDB() {
+  if (dbConfig.finishedFilling !== true) {
+    dbConfig.finishedFilling = true;
+    console.log('FINISHING');
+    await db.none({
+      text: 'CREATE INDEX IF NOT EXISTS idx_post_id ON posts(id);',
+    });
+    await db.none({
+      text: 'CREATE INDEX IF NOT EXISTS idx_post_thread_id ON posts(thread_id)',
+    });
+    await db.none({
+      text: 'CREATE INDEX IF NOT EXISTS idx_post_cr_id ON posts(created, id, thread_id);',
+    });
+    await db.none({
+      text: 'CREATE INDEX IF NOT EXISTS idx_post_thread_id_cr_i ON posts(thread_id, id);',
+    });
+    await db.none({
+      text: 'CREATE INDEX IF NOT EXISTS idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);',
+    });
+  }
+}
+
+async function insertForumUsersAtFill() {
+  if (dbConfig.postsCount === 1500000 && !dbConfig.fusersInserted) {
+    dbConfig.fusersInserted = true;
+    console.log('INSERTING FORUM USERS', dbConfig.postsCount);
+
+    // one more batch...
+    let usersSql = 'INSERT INTO fusers(forum_slug, username) VALUES ';
+    dbConfig.fusers.forEach((key, value) => {
+      for (let l = 0; l < value.length; l++) {
+        usersSql += `('${key}', '${value[l]}'),`;
+      }
+    });
+
+    dbConfig.fusers.clear();
+
+    usersSql = usersSql.slice(0, -1);
+    usersSql += ' ON CONFLICT DO NOTHING';
+    // console.log(usersSql);
+    db.none(usersSql).catch(err => console.log(err));
+    // await finishDB();
+  } else if (!dbConfig.fusersInserted) {
+    console.log('FUNC ', !dbConfig.isFill);
+    // one more batch...
+    let usersSql = 'INSERT INTO fusers(forum_slug, username) VALUES ';
+    dbConfig.fusers.forEach((key, value) => {
+      for (let l = 0; l < value.length; l++) {
+        usersSql += `('${key}', '${value[l]}'),`;
+      }
+    });
+
+    dbConfig.fusers.clear();
+
+    usersSql = usersSql.slice(0, -1);
+    usersSql += ' ON CONFLICT DO NOTHING';
+    // console.log(usersSql);
+    await db.none(usersSql).catch(err => console.log(err));
+  }
+}
+
 async function createPost(req, reply) {
   let sql = 'SELECT id AS thread_id, forum FROM threads WHERE ';
   if (isNaN(req.params.slug)) {
@@ -11,7 +73,11 @@ async function createPost(req, reply) {
   }
 
   const posts = req.body;
-  const users = [];
+  dbConfig.postsCount += posts.length;
+
+  if (posts.length > 60) {
+    dbConfig.isFill = true;
+  }
 
   // console.log(sql, req.params.slug)
 
@@ -20,7 +86,7 @@ async function createPost(req, reply) {
     values: req.params.slug,
   })
     .then((threadForumInfo) => {
-      console.log('threadForumInfo', threadForumInfo)
+      // console.log('threadForumInfo', threadForumInfo)
       if (posts.length === 0) {
         reply.code(201).send([]);
       }
@@ -36,10 +102,11 @@ async function createPost(req, reply) {
       const args = [];
       let i = 1;
       // dbConfig.counter.post += posts.length;
+      const forumUsers = [];
 
       for (let j = 0; j < posts.length; j++) {
-        if (!users.includes(posts[j].author)) {
-          users.push(posts[j].author);
+        if (!forumUsers.includes(posts[j].author)) {
+          forumUsers.push(posts[j].author);
         }
 
         if (posts[j].parent !== undefined) {
@@ -47,9 +114,10 @@ async function createPost(req, reply) {
               SELECT (
                 CASE WHEN
                 EXISTS (
-                    SELECT 1 FROM posts p WHERE p.id=$${i + 3}
-                      AND p.thread_id=$${i + 2}
-                  )
+                  SELECT 1 FROM posts p
+                  WHERE p.id=$${i + 3}
+                  AND p.thread_id=$${i + 2}
+                )
                 THEN $${i + 2} ELSE NULL END)
             ), $${i + 3}, $${i + 4}),`;
           i += 5;
@@ -88,17 +156,18 @@ async function createPost(req, reply) {
             values: [posts.length, threadForumInfo.forum],
           });
 
-          // one more batch...
-          let usersSql = 'INSERT INTO fusers(forum_slug, username) VALUES ';
-          for (let l = 0; l < users.length; l++) {
-            usersSql += `('${threadForumInfo.forum}', '${users[l]}'),`;
+          dbConfig.fusers.set(forumUsers, threadForumInfo.forum);
+
+          if (dbConfig.isFill === true) {
+            if (dbConfig.postsCount === 1500000) {
+              await insertForumUsersAtFill();
+              // await finishDB();
+            }
+          } else if (dbConfig.isFill === false) {
+            await insertForumUsersAtFill();
+            console.log(posts.length);
           }
-          usersSql = usersSql.slice(0, -1);
-          usersSql += ' ON CONFLICT DO NOTHING';
-          console.log(usersSql);
-          await db.none({
-            text: usersSql,
-          });
+
           reply.code(201).send(data);
         })
         .catch((error) => {
@@ -208,7 +277,7 @@ async function getPostInfo(req, reply) {
     endQuery += ' WHERE posts.id = $1 LIMIT 1';
     const sql = beginQuery.slice(0, -1) + endQuery;
 
-    console.log(sql, id);
+    // console.log(sql, id);
     db.one(sql, id)
       .then((bigData) => {
         const response = {};
@@ -295,7 +364,7 @@ async function updatePost(req, reply) {
     args.push(req.body.message, req.params.id);
   }
 
-  console.log(query);
+  // console.log(query);
 
   db.one(query, args)
     .then((data) => {

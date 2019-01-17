@@ -9,7 +9,7 @@ const service = require('./service_routes');
 // const router = express.Router;
 
 module.exports = (app) => {
-  app.get('/api', (req, reply) => reply.code(200).send({}));
+  app.get('/api', service.ping);
   app.post('/api/user/:nickname/create', users.createUser);
   app.get('/api/user/:nickname/profile', users.getUserInfo);
   app.post('/api/user/:nickname/profile', users.updateUserInfo);

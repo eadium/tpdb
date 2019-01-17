@@ -14,16 +14,20 @@ const dataConflict = '23505';
 const dataDoesNotExist = '23503';
 const notFound = '42601';
 
-const counter = {
-  forum: 0,
-  thread: 0,
-  user: 0,
-  post: 0,
-};
+const users = new Map();
+const fill = false;
+const postsCount = 0;
+const fusersInserted = false;
+const finishedFilling = false;
+
+module.exports.fusers = users;
+module.exports.postsCount = postsCount;
+module.exports.isFill = fill;
+module.exports.fusersInserted = fusersInserted;
+module.exports.finishedFilling = finishedFilling;
 
 module.exports.dataDoesNotExist = dataDoesNotExist;
 module.exports.dataConflict = dataConflict;
 module.exports.notNullErorr = notNullErorr;
 module.exports.notFound = notFound;
-module.exports.counter = counter;
 module.exports.db = db;

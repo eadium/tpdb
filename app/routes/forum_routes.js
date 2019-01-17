@@ -1,7 +1,7 @@
 const dbConfig = require('../../config/db');
 // const Forum = require('../models/forum');
 
-const db = dbConfig.db;
+const { db } = dbConfig;
 
 async function createForum(req, reply) {
   db.one({
@@ -69,9 +69,9 @@ async function getForumUsers(req, reply) {
 
   let query = `
     SELECT U.nickname, U.about, U.fullname, U.email
-      FROM (SELECT DISTINCT * FROM fusers WHERE forum_slug=$1) f
-      LEFT JOIN users U ON f.username = U.nickname
-      WHERE f.forum_slug = $1
+      FROM fusers F
+      LEFT JOIN users U ON F.username = U.nickname
+      WHERE F.forum_slug = $1
     `;
   const args = [slug];
   let i = 2;
