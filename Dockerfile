@@ -1,7 +1,8 @@
 FROM ubuntu:18.04
 
-ENV DEBIAN_FRONTEND 'noninteractive'
+ ENV DEBIAN_FRONTEND 'noninteractive'
 RUN echo 'Europe/Moscow' > '/etc/timezone'
+
 
 RUN apt-get -y update
 RUN apt-get -y install wget
@@ -15,24 +16,33 @@ RUN apt-get install -y postgresql-10
 RUN wget -qO- https://deb.nodesource.com/setup_10.x | bash -
 RUN apt-get install -y nodejs
 
-ENV WORK /opt/tp-db
+ ENV WORK /opt/tp-db
 WORKDIR $WORK
 
-COPY schema.pgsql schema.pgsql
+ COPY schema.pgsql schema.pgsql
 
+ USER postgres
 
-USER postgres
-
-RUN /etc/init.d/postgresql start &&\
+ RUN /etc/init.d/postgresql start &&\
     psql --echo-all --command "CREATE USER manager WITH SUPERUSER PASSWORD 'manager';" &&\
     createdb -O manager forum &&\
     psql --dbname=forum --echo-all --command 'CREATE EXTENSION IF NOT EXISTS citext;' &&\
-    psql < schema.pgsql &&\
+    psql forum -f schema.pgsql &&\
     /etc/init.d/postgresql stop
 
 RUN echo "local all  all    trust" >> /etc/postgresql/$PGVER/main/pg_hba.conf
 
 RUN echo "listen_addresses='*'" >> /etc/postgresql/$PGVER/main/postgresql.conf
+
+RUN echo "fsync = off" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "full_page_writes = off" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "autovacuum = off" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "shared_buffers = 256MB" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "wal_level = minimal" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "wal_writer_delay = 2000ms" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "effective_cache_size = 1024MB" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "max_wal_senders = 0" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "work_mem = 16MB" >> /etc/postgresql/$PGVER/main/postgresql.conf
 
 USER root
 

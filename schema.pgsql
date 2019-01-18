@@ -1,10 +1,10 @@
 SET SYNCHRONOUS_COMMIT = 'off';
 -- SET wal_writer_delay = '2000ms';
 -- SET autovacuum = 'off';
-SET shared_buffers = '256MB'
+SET shared_buffers = '256MB';
 -- SET max_wal_senders = 0;
 
-CREATE EXTENSION IF NOT EXISTS CITEXT;
+-- CREATE EXTENSION IF NOT EXISTS CITEXT;
 
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS forums CASCADE;
@@ -13,16 +13,16 @@ DROP TABLE IF EXISTS votes CASCADE;
 DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS fusers CASCADE;
 
-DROP INDEX IF EXISTS idx_users_nickname;
-DROP INDEX IF EXISTS idx_users_email;
-DROP INDEX IF EXISTS idx_forums_slug;
-DROP INDEX IF EXISTS idx_threads_slug_created;
-DROP INDEX IF EXISTS idx_threads_forum_created;
-DROP INDEX IF EXISTS idx_post_id;
-DROP INDEX IF EXISTS idx_post_thread_id;
-DROP INDEX IF EXISTS idx_post_cr_id;
-DROP INDEX IF EXISTS idx_post_thread_id_cr_i;
-DROP INDEX IF EXISTS idx_post_thread_id_p_i;
+-- DROP INDEX IF EXISTS idx_users_nickname;
+-- DROP INDEX IF EXISTS idx_users_email;
+-- DROP INDEX IF EXISTS idx_forums_slug;
+-- DROP INDEX IF EXISTS idx_threads_slug_created;
+-- DROP INDEX IF EXISTS idx_threads_forum_created;
+-- DROP INDEX IF EXISTS idx_post_id;
+-- DROP INDEX IF EXISTS idx_post_thread_id;
+-- DROP INDEX IF EXISTS idx_post_cr_id;
+-- DROP INDEX IF EXISTS idx_post_thread_id_cr_i;
+-- DROP INDEX IF EXISTS idx_post_thread_id_p_i;
 
 CREATE TABLE IF NOT EXISTS users (
   -- id       SERIAL    PRIMARY KEY,
