@@ -3,16 +3,9 @@ const dbConfig = require('../../config/db');
 const { db } = dbConfig;
 
 async function ping(req, reply) {
-  // await db.none({
-  //   text: `
-  //     DROP INDEX IF EXISTS
-  //       idx_post_id,
-  //       idx_post_thread_id,
-  //       idx_post_cr_id,
-  //       idx_post_thread_id_cr_i,
-  //       idx_post_thread_id_p_i CASCADE;
-  //   `,
-  // });
+  await db.none({
+    text: 'ANALYZE',
+  });
 
   reply.code(200).send({});
 }

@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS fusers CASCADE;
 -- DROP INDEX IF EXISTS idx_post_thread_id_cr_i;
 -- DROP INDEX IF EXISTS idx_post_thread_id_p_i;
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE UNLOGGED TABLE IF NOT EXISTS users (
   -- id       SERIAL    PRIMARY KEY,
   nickname CITEXT         NOT NULL PRIMARY KEY,
   email    CITEXT         NOT NULL UNIQUE,
@@ -34,7 +34,7 @@ CREATE UNIQUE INDEX idx_users_nickname ON users(nickname COLLATE "C");
 
 ----------------------------- FORUMS ------------------------------
 
-CREATE TABLE IF NOT EXISTS forums (
+CREATE UNLOGGED TABLE IF NOT EXISTS forums (
   id      BIGSERIAL PRIMARY KEY,
   slug    CITEXT,
   posts   INT    NOT NULL DEFAULT 0,
@@ -48,7 +48,7 @@ CREATE UNIQUE INDEX idx_forums_slug    ON forums(slug);
 
 ----------------------------- THREADS ------------------------------
 
-CREATE TABLE IF NOT EXISTS threads (
+CREATE UNLOGGED TABLE IF NOT EXISTS threads (
   id        SERIAL,
   author    CITEXT        NOT NULL REFERENCES users(nickname),
   created   TIMESTAMPTZ DEFAULT now(),
@@ -82,7 +82,7 @@ FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
 
 ----------------------------- POSTS -------------------------------
 
-CREATE TABLE posts (
+CREATE UNLOGGED TABLE posts (
   id SERIAL,
   path INTEGER[],
   author CITEXT NOT NULL REFERENCES users(nickname),
@@ -153,7 +153,7 @@ CREATE FUNCTION check_edited(pid INT, message TEXT)
 
 ------------------------------ VOTES ------------------------------
 
-CREATE TABLE IF NOT EXISTS votes (
+CREATE UNLOGGED TABLE IF NOT EXISTS votes (
   user_id   CITEXT REFERENCES users(nickname)   NOT NULL,
   thread_id INT REFERENCES threads(id) NOT NULL,
   -- author CITEXT NOT NULL REFERENCES users(nickname),
@@ -206,7 +206,7 @@ FOR EACH ROW EXECUTE PROCEDURE vote_update();
 
 ----------------------------- FORUM_USERS -----------------------------
 
-CREATE TABLE fusers (
+CREATE UNLOGGED TABLE fusers (
     forum_slug CITEXT NOT NULL,
     username CITEXT NOT NULL--,
     -- CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)

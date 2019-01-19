@@ -282,7 +282,7 @@ async function getPostsByID(req, reply, id) {
     }
   }
 
-  console.log(sql, args);
+  // console.log(sql, args);
 
   db.any({
     text: sql,

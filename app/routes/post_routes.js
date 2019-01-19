@@ -7,7 +7,7 @@ async function finishDB() {
   if (dbConfig.finishedFilling !== true) {
     dbConfig.finishedFilling = true;
     console.log('FINISHING');
-    await db.none('ANALYZE;');
+    // await db.none('ANALYZE;');
     // await db.none('CLUSTER;');
     // await db.none({
     //   text: 'CREATE INDEX IF NOT EXISTS idx_post_id ON posts(id);',
@@ -44,10 +44,10 @@ async function insertForumUsersAtFill() {
     dbConfig.fusers.clear();
 
     usersSql = usersSql.slice(0, -1);
-    usersSql += ' ON CONFLICT DO NOTHING';
+    // usersSql += ' ON CONFLICT DO NOTHING';
     console.log(dbConfig.fusers);
 
-    db.none(usersSql).catch(err => console.log(err));
+    await db.none(usersSql).catch(err => console.log(err));
     await finishDB();
   } else if ((!dbConfig.fusersInserted)
       || (dbConfig.postsCount >= 1500000 && dbConfig.timeToThinFill === true)) {
@@ -63,7 +63,7 @@ async function insertForumUsersAtFill() {
     dbConfig.fusers.clear();
 
     usersSql = usersSql.slice(0, -1);
-    usersSql += ' ON CONFLICT DO NOTHING';
+    // usersSql += ' ON CONFLICT DO NOTHING';
     // console.log(usersSql);
     await db.none(usersSql).catch(err => console.log(err));
   }
@@ -161,18 +161,38 @@ async function createPost(req, reply) {
             values: [posts.length, threadForumInfo.forum],
           });
 
-          dbConfig.fusers.set(forumUsers, threadForumInfo.forum);
-          console.log('isFill: ', dbConfig.isFill, '\nposts: ', dbConfig.postsCount);
-          if (dbConfig.isFill === true) {
-            if (dbConfig.postsCount >= 1500000) {
-              dbConfig.timeToThinFill = true;
-              await insertForumUsersAtFill();
-              // await finishDB();
-            }
-          } else if (dbConfig.isFill === false || dbConfig.timeToThinFill === true) {
-            await insertForumUsersAtFill();
-            // console.log(posts.length);
+          let fusersSql = `
+            INSERT INTO fusers(forum_slug, username) VALUES
+          `;
+          let index = 1;
+          const fusersArgs = [];
+          for (let k = 0; k < forumUsers.length; k++) {
+            fusersSql += `($${index}, $${index + 1}),`;
+            index += 2;
+            fusersArgs.push(threadForumInfo.forum, forumUsers[k]);
           }
+          fusersSql = fusersSql.slice(0, -1);
+          fusersSql += ' ON CONFLICT DO NOTHING';
+
+          await db.none({
+            text: fusersSql,
+            values: fusersArgs,
+          })
+            .catch(err => console.log(err));
+
+
+          // dbConfig.fusers.set(forumUsers, threadForumInfo.forum);
+          // console.log('isFill: ', dbConfig.isFill, '\nposts: ', dbConfig.postsCount);
+          // if (dbConfig.isFill === true) {
+          //   if (dbConfig.postsCount >= 1500000) {
+          //     dbConfig.timeToThinFill = true;
+          //     await insertForumUsersAtFill();
+          //     // await finishDB();
+          //   }
+          // } else if (dbConfig.isFill === false || dbConfig.timeToThinFill === true) {
+          //   await insertForumUsersAtFill();
+          //   // console.log(posts.length);
+          // }
 
           reply.code(201).send(data);
         })
