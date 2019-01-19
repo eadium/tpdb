@@ -11,15 +11,15 @@ async function createUser(req, reply) {
     about: req.body.about,
   });
 
-  db.none({
+  db.one({
     text: 'INSERT INTO users (nickname, fullname, email, about) '
-    + 'VALUES ($1, $2, $3, $4)',
+    + 'VALUES ($1, $2, $3, $4) RETURNING *',
     // + ' RETURNING (about, email, fullname, nickname);',
     values: [user.nickname, user.fullname, user.email, user.about],
   })
-    .then(() => {
+    .then((data) => {
       reply.code(201)
-        .send(user.toJson());
+        .send(data);
     })
     .catch((err) => {
       // console.log(err);

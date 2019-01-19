@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
   about    TEXT
 );
 
-CREATE UNIQUE INDEX idx_users_nickname ON users(nickname);
+CREATE UNIQUE INDEX idx_users_nickname ON users(nickname COLLATE "C");
 -- CLUSTER users USING idx_users_nickname;
 -- CREATE UNIQUE INDEX idx_users_email    ON users(email);
 
@@ -208,11 +208,11 @@ FOR EACH ROW EXECUTE PROCEDURE vote_update();
 
 CREATE TABLE fusers (
     forum_slug CITEXT NOT NULL,
-    username CITEXT NOT NULL,
-    CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)
+    username CITEXT NOT NULL--,
+    -- CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)
 );
 
-CREATE INDEX idx_fusers_slug ON fusers(forum_slug);
+CREATE UNIQUE INDEX idx_fusers_slug ON fusers(forum_slug, username);
 
 -- CLUSTER fusers USING idx_fusers_slug;
 

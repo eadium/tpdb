@@ -28,6 +28,7 @@ async function finishDB() {
 }
 
 async function insertForumUsersAtFill() {
+  console.log(dbConfig.postsCount, dbConfig.fusersInserted);
   if (dbConfig.postsCount === 1500000 && !dbConfig.fusersInserted) {
     dbConfig.fusersInserted = true;
     console.log('INSERTING FORUM USERS', dbConfig.postsCount);
@@ -45,6 +46,7 @@ async function insertForumUsersAtFill() {
     usersSql = usersSql.slice(0, -1);
     usersSql += ' ON CONFLICT DO NOTHING';
     console.log(dbConfig.fusers);
+    
     db.none(usersSql).catch(err => console.log(err));
     await finishDB();
   } else if (!dbConfig.fusersInserted) {
@@ -161,7 +163,7 @@ async function createPost(req, reply) {
           dbConfig.fusers.set(forumUsers, threadForumInfo.forum);
 
           if (dbConfig.isFill === true) {
-            if (dbConfig.postsCount === 1500000) {
+            if (dbConfig.postsCount >= 1500000) {
               await insertForumUsersAtFill();
               // await finishDB();
             }
