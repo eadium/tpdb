@@ -16,7 +16,7 @@ app.addContentTypeParser('application/json',
 
 const logger = require('morgan');
 
-app.use(logger('dev'));
+app.use(logger(':response-time ms :url'));
 
 require('./routes/routes')(app);
 
