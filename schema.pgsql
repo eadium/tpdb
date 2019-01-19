@@ -86,7 +86,7 @@ CREATE UNIQUE INDEX idx_post_id ON posts(id);
 CREATE INDEX idx_post_thread_id ON posts(thread_id);
 CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
-CREATE INDEX idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);
+CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
 
 CLUSTER posts USING idx_post_cr_id;
 
