@@ -1,5 +1,7 @@
 FROM ubuntu:18.04
 
+MAINTAINER Andryukhov Artem
+
 ENV DEBIAN_FRONTEND 'noninteractive'
 RUN echo 'Europe/Moscow' > '/etc/timezone'
 

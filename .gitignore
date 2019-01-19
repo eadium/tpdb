@@ -4,3 +4,5 @@ apitest
 *.html
 *.gz
 report.html
+apitest
+tech-db-forum*
