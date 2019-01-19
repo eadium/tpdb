@@ -7,7 +7,7 @@ async function finishDB() {
   if (dbConfig.finishedFilling !== true) {
     dbConfig.finishedFilling = true;
     console.log('FINISHING');
-    await db.none('VACUUM ANALYZE;');
+    await db.none('ANALYZE;');
     // await db.none('CLUSTER;');
     // await db.none({
     //   text: 'CREATE INDEX IF NOT EXISTS idx_post_id ON posts(id);',
@@ -161,7 +161,7 @@ async function createPost(req, reply) {
           });
 
           dbConfig.fusers.set(forumUsers, threadForumInfo.forum);
-
+          console.log('isFill: ', dbConfig.isFill, '\nposts: ', dbConfig.postsCount);
           if (dbConfig.isFill === true) {
             if (dbConfig.postsCount >= 1500000) {
               await insertForumUsersAtFill();
