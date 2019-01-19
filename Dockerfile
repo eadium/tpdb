@@ -36,7 +36,7 @@ RUN echo "listen_addresses='*'" >> /etc/postgresql/$PGVER/main/postgresql.conf
 
 RUN echo "fsync = off" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
     echo "full_page_writes = off" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
-    # echo "autovacuum = off" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
+    echo "default_statistics_target = 100" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
     echo "shared_buffers = 256MB" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
     echo "wal_level = minimal" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
     echo "wal_writer_delay = 2000ms" >> /etc/postgresql/$PGVER/main/postgresql.conf &&\
