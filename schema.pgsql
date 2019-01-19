@@ -49,7 +49,7 @@ CREATE UNIQUE INDEX idx_forums_slug    ON forums(slug);
 ----------------------------- THREADS ------------------------------
 
 CREATE TABLE IF NOT EXISTS threads (
-  id        SERIAL PRIMARY KEY,
+  id        SERIAL,
   author    CITEXT        NOT NULL REFERENCES users(nickname),
   created   TIMESTAMPTZ DEFAULT now(),
   forum     CITEXT        NOT NULL REFERENCES forums(slug),
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS threads (
   votes     INT         NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_thread_id               ON threads(id);
+CREATE UNIQUE INDEX idx_thread_id               ON threads(id);
 CREATE INDEX idx_threads_slug_created    ON threads(created);
 CREATE INDEX idx_threads_forum_created    ON threads(forum, created);
 
@@ -83,7 +83,7 @@ FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
 ----------------------------- POSTS -------------------------------
 
 CREATE TABLE posts (
-  id SERIAL PRIMARY KEY,
+  id SERIAL,
   path INTEGER[],
   author CITEXT NOT NULL REFERENCES users(nickname),
   created TIMESTAMPTZ DEFAULT now(),
@@ -94,7 +94,7 @@ CREATE TABLE posts (
   thread_id INTEGER NOT NULL
 );
 
-CREATE INDEX idx_post_id ON posts(id);
+CREATE UNIQUE INDEX idx_post_id ON posts(id);
 CREATE INDEX idx_post_thread_id ON posts(thread_id);
 CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);

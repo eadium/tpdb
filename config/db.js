@@ -19,11 +19,13 @@ const fill = false;
 const postsCount = 0;
 const fusersInserted = false;
 const finishedFilling = false;
+const timeToThinFill = false;
 
 module.exports.fusers = users;
 module.exports.postsCount = postsCount;
 module.exports.isFill = fill;
 module.exports.fusersInserted = fusersInserted;
+module.exports.timeToThinFill = timeToThinFill;
 module.exports.finishedFilling = finishedFilling;
 
 module.exports.dataDoesNotExist = dataDoesNotExist;

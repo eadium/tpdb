@@ -29,7 +29,7 @@ async function finishDB() {
 
 async function insertForumUsersAtFill() {
   console.log(dbConfig.postsCount, dbConfig.fusersInserted);
-  if (dbConfig.postsCount >= 1500000 && !dbConfig.fusersInserted) {
+  if ((dbConfig.postsCount >= 1500000 && !dbConfig.fusersInserted)) {
     dbConfig.fusersInserted = true;
     console.log('INSERTING FORUM USERS', dbConfig.postsCount);
 
@@ -46,10 +46,11 @@ async function insertForumUsersAtFill() {
     usersSql = usersSql.slice(0, -1);
     usersSql += ' ON CONFLICT DO NOTHING';
     console.log(dbConfig.fusers);
-    
+
     db.none(usersSql).catch(err => console.log(err));
     await finishDB();
-  } else if (!dbConfig.fusersInserted) {
+  } else if ((!dbConfig.fusersInserted)
+      || (dbConfig.postsCount >= 1500000 && dbConfig.timeToThinFill === true)) {
     // console.log('FUNC ', !dbConfig.isFill);
     // one more batch...
     let usersSql = 'INSERT INTO fusers(forum_slug, username) VALUES ';
@@ -164,10 +165,11 @@ async function createPost(req, reply) {
           console.log('isFill: ', dbConfig.isFill, '\nposts: ', dbConfig.postsCount);
           if (dbConfig.isFill === true) {
             if (dbConfig.postsCount >= 1500000) {
+              dbConfig.timeToThinFill = true;
               await insertForumUsersAtFill();
               // await finishDB();
             }
-          } else if (dbConfig.isFill === false) {
+          } else if (dbConfig.isFill === false || dbConfig.timeToThinFill === true) {
             await insertForumUsersAtFill();
             // console.log(posts.length);
           }
