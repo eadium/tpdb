@@ -3,7 +3,7 @@ const dbConfig = require('../../config/db');
 const { db } = dbConfig;
 
 async function ping(req, reply) {
-  await db.none({
+  db.none({
     text: 'ANALYZE',
   });
     // .then(() => {
