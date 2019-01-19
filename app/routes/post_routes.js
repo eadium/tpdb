@@ -7,7 +7,7 @@ async function finishDB() {
   if (dbConfig.finishedFilling !== true) {
     dbConfig.finishedFilling = true;
     console.log('FINISHING');
-    // await db.none('VACUUM ANALYZE;');
+    await db.none('VACUUM ANALYZE;');
     // await db.none('CLUSTER;');
     // await db.none({
     //   text: 'CREATE INDEX IF NOT EXISTS idx_post_id ON posts(id);',
@@ -44,7 +44,7 @@ async function insertForumUsersAtFill() {
 
     usersSql = usersSql.slice(0, -1);
     usersSql += ' ON CONFLICT DO NOTHING';
-    // console.log(usersSql);
+    console.log(dbConfig.fusers);
     db.none(usersSql).catch(err => console.log(err));
     await finishDB();
   } else if (!dbConfig.fusersInserted) {
@@ -146,7 +146,7 @@ async function createPost(req, reply) {
       sql += ` RETURNING author, id, created,
         thread_id AS thread, parent_id AS parent, forum_slug AS forum, message`;
 
-      // console.log(sql, args);
+      // console.log(sql);
 
       db.any(({
         text: sql,

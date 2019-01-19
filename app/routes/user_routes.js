@@ -42,7 +42,7 @@ async function createUser(req, reply) {
 }
 
 async function getUserInfo(req, reply) {
-  db.any({
+  db.one({
     text: 'SELECT about, email, nickname, fullname FROM users WHERE nickname=$1;',
     values: [req.params.nickname],
   })
@@ -53,9 +53,10 @@ async function getUserInfo(req, reply) {
             message: `Can't find user by nickname ${req.params.nickname}`,
           });
       }
-      const user = data.map(existingUser => new User(existingUser))[0];
+      // console.log(data);
+      // const user = data.map(existingUser => new User(existingUser))[0];
       reply.code(200)
-        .send(user);
+        .send(data);
     })
     .catch((err) => {
       // console.log(err);

@@ -1,8 +1,4 @@
 SET SYNCHRONOUS_COMMIT = 'off';
--- SET wal_writer_delay = '2000ms';
--- SET autovacuum = 'off';
-SET shared_buffers = '256MB';
--- SET max_wal_senders = 0;
 
 -- CREATE EXTENSION IF NOT EXISTS CITEXT;
 
@@ -33,7 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE UNIQUE INDEX idx_users_nickname ON users(nickname);
-CLUSTER users USING idx_users_nickname;
+-- CLUSTER users USING idx_users_nickname;
 -- CREATE UNIQUE INDEX idx_users_email    ON users(email);
 
 ----------------------------- FORUMS ------------------------------
@@ -48,7 +44,7 @@ CREATE TABLE IF NOT EXISTS forums (
 );
 
 CREATE UNIQUE INDEX idx_forums_slug    ON forums(slug);
-CLUSTER forums USING idx_forums_slug;
+-- CLUSTER forums USING idx_forums_slug;
 
 ----------------------------- THREADS ------------------------------
 
@@ -67,7 +63,7 @@ CREATE INDEX idx_thread_id               ON threads(id);
 CREATE INDEX idx_threads_slug_created    ON threads(created);
 CREATE INDEX idx_threads_forum_created    ON threads(forum, created);
 
-CLUSTER threads USING idx_threads_slug_created;
+-- CLUSTER threads USING idx_threads_slug_created;
 
 
 CREATE FUNCTION threads_forum_counter()
@@ -100,11 +96,11 @@ CREATE TABLE posts (
 
 CREATE INDEX idx_post_id ON posts(id);
 CREATE INDEX idx_post_thread_id ON posts(thread_id);
-CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
+CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
 CREATE INDEX idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);
 
-CLUSTER posts USING idx_post_thread_id;
+-- CLUSTER posts USING idx_post_thread_id;
 
 CREATE FUNCTION update_path()
   RETURNS TRIGGER AS '
@@ -169,7 +165,7 @@ CREATE TABLE IF NOT EXISTS votes (
 ALTER TABLE ONLY votes
     ADD CONSTRAINT votes_user_thread_unique UNIQUE (user_id, thread_id);
 
-CLUSTER votes USING votes_user_thread_unique;
+-- CLUSTER votes USING votes_user_thread_unique;
 
 CREATE FUNCTION vote_insert()
   RETURNS TRIGGER AS '
@@ -218,7 +214,7 @@ CREATE TABLE fusers (
 
 CREATE INDEX idx_fusers_slug ON fusers(forum_slug);
 
-CLUSTER fusers USING idx_fusers_slug;
+-- CLUSTER fusers USING idx_fusers_slug;
 
 
 ----------------------------- INDEXES ----------------------------------

@@ -101,7 +101,6 @@ async function getForumUsers(req, reply) {
   })
     .then((data) => {
       if (data.length === 0) {
-
         db.one({
           text: 'SELECT id FROM forums WHERE slug = $1 LIMIT 1',
           values: [slug],
@@ -128,7 +127,10 @@ async function getForumUsers(req, reply) {
             }
           });
       } else {
-        reply.code(200).send(data);
+        // console.log(data);
+        reply.header('Content-Type', 'application/json')
+          .type('application/json')
+          .code(200).send(data);
       }
     })
     .catch((err) => {

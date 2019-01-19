@@ -27,7 +27,7 @@ WORKDIR $WORK
     psql --echo-all --command "CREATE USER manager WITH SUPERUSER PASSWORD 'manager';" &&\
     createdb -O manager forum &&\
     psql --dbname=forum --echo-all --command 'CREATE EXTENSION IF NOT EXISTS citext;' &&\
-    psql forum -f schema.pgsql &&\
+    psql -U manager forum -f schema.pgsql &&\
     /etc/init.d/postgresql stop
 
 RUN echo "local all  all    trust" >> /etc/postgresql/$PGVER/main/pg_hba.conf
