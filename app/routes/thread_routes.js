@@ -243,43 +243,41 @@ async function getPostsByID(req, reply, id) {
       args.push(limit);
     }
   } else {
-    sql = `WITH ranked_posts AS
-      (SELECT p.author, p.created, p.forum_slug, p.id, p.message,
-        p.parent_id, p.thread_id, p.path || p.id AS path,`;
-    if (desc === 'true') {
-      sql += ' dense_rank() OVER (ORDER BY COALESCE(path[1], p.id) DESC) AS rank';
-    } else {
-      sql += ' dense_rank() OVER (ORDER BY COALESCE(path[1], p.id)) AS rank';
-    }
 
-    sql += `
-     FROM posts p LEFT JOIN threads
-      ON p.thread_id = threads.id WHERE threads.id = $1)
-      SELECT p.author, p.created, p.forum_slug AS forum,
-          p.id, p.message, p.parent_id AS parent, p.thread_id AS thread
-        FROM ranked_posts p `;
     args = [slugOrId];
-
-    let i = 2;
+    const descSql = desc === 'true' ? 'DESC' : '';
+    let sinceSql;
+    let limitSql;
+    let k = 1;
     if (since !== undefined) {
-      sql += ` LEFT JOIN ranked_posts posts ON posts.id = $${i++} WHERE `;
+      sinceSql = `WHERE p2.thread_id = $${k++} AND p2.parent_id IS NULL
+                    AND p2.path[1] ${desc === 'true' ? '<' : '>'}
+                      (SELECT p3.path[1] from posts p3 where p3.id = $${k++})`;
       args.push(since);
-      if (limit !== undefined) {
-        sql += `p.rank <= $${i++} + posts.rank AND `;
-        args.push(limit);
-      }
-      sql += `
-        (p.rank > posts.rank OR
-          p.rank = posts.rank AND p.path > posts.path)
-          ORDER BY p.rank, p.path
-      `;
     } else {
-      if (limit !== undefined) {
-        sql += ` WHERE p.rank <= $${i++}`;
-        args.push(limit);
-      }
-      sql += ' ORDER BY p.rank, p.path';
+      sinceSql = `WHERE p2.parent_id IS NULL AND p2.thread_id = $${k++}`;
     }
+
+    if (limit !== undefined) {
+      limitSql = `LIMIT $${k++}`;
+      args.push(limit);
+    } else {
+      limitSql = '';
+    }
+
+    sql = `
+    SELECT p.id, p.author, p.created, p.edited, p.message, p.thread_id AS thread,
+      COALESCE(p.parent_id,0) AS parent, p.forum_slug AS forum
+      FROM posts p
+      WHERE p.thread_id = $1 and p.path[1] IN (
+        SELECT p2.path[1]
+        FROM posts p2
+        ${sinceSql}
+        ORDER BY p2.path ${descSql}
+        ${limitSql}
+      )
+      ORDER BY p.path[1] ${descSql}, p.path;
+    `;
   }
 
   // console.log(sql, args);

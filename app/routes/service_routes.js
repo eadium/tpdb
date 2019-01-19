@@ -6,6 +6,11 @@ async function ping(req, reply) {
   await db.none({
     text: 'ANALYZE',
   });
+    // .then(() => {
+    //   db.none({
+    //     text: 'CLUSTER',
+    //   });
+    // });
 
   reply.code(200).send({});
 }
