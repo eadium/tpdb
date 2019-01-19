@@ -7,7 +7,7 @@ async function finishDB() {
   if (dbConfig.finishedFilling !== true) {
     dbConfig.finishedFilling = true;
     console.log('FINISHING');
-    await db.none('ANALYZE;');
+    // await db.none('ANALYZE;');
     // await db.none('CLUSTER;');
     // await db.none({
     //   text: 'CREATE INDEX IF NOT EXISTS idx_post_id ON posts(id);',
