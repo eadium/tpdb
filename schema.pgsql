@@ -47,10 +47,10 @@ CREATE UNLOGGED TABLE IF NOT EXISTS threads (
   votes     INT         NOT NULL DEFAULT 0
 );
 
-CREATE UNIQUE INDEX idx_thread_id               ON threads(id);
+CREATE UNIQUE INDEX idx_thread_id        ON threads(id);
 CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
-CREATE INDEX idx_threads_slug_id   ON threads(slug, id);
-CREATE INDEX idx_threads_forum_created    ON threads(forum, created);
+CREATE INDEX idx_threads_slug_id         ON threads(slug, id);
+CREATE INDEX idx_threads_forum_created   ON threads(forum, created);
 
 CLUSTER threads USING idx_threads_forum_created;
 
@@ -82,11 +82,14 @@ CREATE UNLOGGED TABLE posts (
   thread_id INTEGER NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_post_id ON posts(id);
-CREATE INDEX idx_post_thread_id ON posts(thread_id);
+-- CREATE UNIQUE INDEX idx_post_id ON posts (id);
+-- CREATE INDEX idx_post_thread_id ON posts(thread_id); --too heavy
 CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
-CREATE INDEX idx_post_threadid_path1_path ON posts(thread_id,(path[1]),path);
+-- CREATE INDEX idx_post_threadid_path1_path ON posts(thread_id,(path[1]),path); --useless and heavy
+CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
+CREATE INDEX idx_posts_main      ON posts USING hash (id); -- parent_tree, flat
+
 -- CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
 
 -- CREATE INDEX idx_post_threadid_path ON posts(thread_id,path);

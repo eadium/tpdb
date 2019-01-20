@@ -261,14 +261,13 @@ async function getPostsByID(req, reply, id) {
     const descSql = desc === 'true' ? 'DESC' : '';
     let sinceSql;
     let limitSql;
-    let k = 1;
+    let k = 2;
     if (since !== undefined) {
-      sinceSql = `WHERE p2.thread_id = $${k++} AND p2.parent_id IS NULL
-                    AND p2.path[1] ${desc === 'true' ? '<' : '>'}
-                      (SELECT p3.path[1] from posts p3 where p3.id = $${k++})`;
+      sinceSql = `AND id ${desc === 'true' ? '<' : '>'}
+                      (SELECT path[1] FROM posts WHERE id = $${k++})`;
       args.push(since);
     } else {
-      sinceSql = `WHERE p2.parent_id IS NULL AND p2.thread_id = $${k++}`;
+      sinceSql = '';
     }
 
     if (limit !== undefined) {
@@ -279,17 +278,17 @@ async function getPostsByID(req, reply, id) {
     }
 
     sql = `
-    SELECT p.id, p.author, p.created, p.edited, p.message, p.thread_id AS thread,
-      COALESCE(p.parent_id,0) AS parent, p.forum_slug AS forum
-      FROM posts p
-      WHERE p.thread_id = $1 and p.path[1] IN (
-        SELECT p2.path[1]
-        FROM posts p2
+    SELECT author, created, forum_slug AS forum, id, edited,
+      message, parent_id AS parent, thread_id AS thread
+      FROM posts
+      WHERE path[1] IN (
+        SELECT id FROM posts
+        WHERE thread_id=$1 AND parent_id IS NULL
         ${sinceSql}
-        ORDER BY p2.path ${descSql}
+        ORDER BY id ${descSql}
         ${limitSql}
       )
-      ORDER BY p.path[1] ${descSql}, p.path;
+      ORDER BY path[1] ${descSql}, path;
     `;
   }
 
@@ -353,7 +352,7 @@ async function getPostsByID(req, reply, id) {
 
       const now4 = new Date();
       // console.log('reply sent: ', now4.getSeconds(), ':', now4.getMilliseconds());
-      console.log('time taken: ', now4.getTime() - now.getTime(), 'sort: ', sort);
+      // console.log('time taken: ', now4.getTime() - now.getTime(), 'sort: ', sort);
 
       reply.code(200)
         .send(data);
