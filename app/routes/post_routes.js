@@ -100,8 +100,9 @@ async function createPost(req, reply) {
           }
           fusersSql = fusersSql.slice(0, -1);
           fusersSql += ' ON CONFLICT DO NOTHING';
-          console.log(fusersSql);
-          
+
+          // console.log(fusersSql);
+
           await db.none({
             text: fusersSql,
             values: fusersArgs,

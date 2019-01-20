@@ -186,14 +186,14 @@ async function getPostsByID(req, reply, id) {
   if (sort === 'flat') {
     sql = `SELECT p.id, p.thread_id AS thread, p.created,
     p.message, p.parent_id AS parent, p.author, p.forum_slug AS forum FROM posts p
-    LEFT JOIN threads ON p.thread_id = threads.id WHERE threads.id = $1`;
+    WHERE thread_id = $1`;
     args = [slugOrId];
     let i = 2;
     if (since !== undefined) {
       if (desc === 'true') {
-        sql += `AND p.id < $${i++}`;
+        sql += ` AND p.id < $${i++}`;
       } else {
-        sql += `AND p.id > $${i++}`;
+        sql += ` AND p.id > $${i++}`;
       }
       args.push(since);
     }
@@ -209,41 +209,49 @@ async function getPostsByID(req, reply, id) {
       args.push(limit);
     }
   } else if (sort === 'tree') {
-    sql = `SELECT p.id, p.thread_id AS thread, p.created,
-      p.message, p.parent_id AS parent, p.author, p.forum_slug
-      AS forum FROM posts p
-      LEFT JOIN threads ON p.thread_id = threads.id
-    `;
+    // sql = `SELECT p.id, p.thread_id AS thread, p.created,
+    //   p.message, p.parent_id AS parent, p.author, p.forum_slug
+    //   AS forum FROM posts p
+    //   LEFT JOIN threads ON p.thread_id = threads.id
+    // `;
+
+    let sinceSql;
+    let descSql;
+    let limitSql;
+    let i = 2;
     args = [];
-    let i = 1;
+    args.push(slugOrId);
+
     if (since !== undefined) {
-      if (desc === 'true') {
-        sql += ` LEFT JOIN posts ON posts.id = $${i++}
-          WHERE p.path || p.id < posts.path || posts.id
-        `;
-      } else {
-        sql += ` LEFT JOIN posts ON posts.id = $${i++}
-          WHERE p.path || p.id > posts.path || posts.id
-        `;
-      }
-      sql += ` AND threads.id = $${i++} ORDER BY p.path || p.id `;
+      sinceSql = ` AND (p.path ${desc === 'true' ? '<' : '>'}
+        (SELECT p2.path FROM posts p2 WHERE p2.id = $${i++})) `;
       args.push(since);
-      args.push(slugOrId);
     } else {
-      sql += ` WHERE threads.id = $${i++} ORDER BY p.path || p.id`;
-      args.push(slugOrId);
+      sinceSql = '';
     }
 
     if (desc === 'true') {
-      sql += ' DESC ';
+      descSql = ' DESC ';
+    } else {
+      descSql = '';
     }
 
     if (limit !== undefined) {
-      sql += ` LIMIT $${i++}`;
+      limitSql = ` LIMIT $${i++}`;
       args.push(limit);
+    } else {
+      limitSql = '';
     }
-  } else {
 
+    sql = `
+      SELECT p.id, p.author, p.created, p.message, p.parent_id AS parent,
+        COALESCE(p.parent_id,0), p.forum_slug AS forum, thread_id AS thread
+        FROM posts p
+        WHERE p.thread_id = $1 ${sinceSql}
+        ORDER BY p.path ${descSql}
+        ${limitSql}
+    `;
+  } else {
     args = [slugOrId];
     const descSql = desc === 'true' ? 'DESC' : '';
     let sinceSql;
@@ -280,7 +288,7 @@ async function getPostsByID(req, reply, id) {
     `;
   }
 
-  // console.log(sql, args);
+  console.log(sql, args);
 
   db.any({
     text: sql,
@@ -292,9 +300,9 @@ async function getPostsByID(req, reply, id) {
 
         let query = 'SELECT threads.id FROM threads WHERE ';
         if (isNaN(slugOrId)) {
-          query += 'threads.id = $1 LIMIT 1';
+          query += 'threads.id = $1';
         } else {
-          query += 'threads.id = $1 LIMIT 1';
+          query += 'threads.id = $1';
         }
 
         // console.log(query, slugOrId);

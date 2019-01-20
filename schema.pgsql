@@ -48,11 +48,11 @@ CREATE UNLOGGED TABLE IF NOT EXISTS threads (
 );
 
 CREATE UNIQUE INDEX idx_thread_id               ON threads(id);
-CREATE INDEX idx_threads_slug_created    ON threads(created);
+CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
+CREATE INDEX idx_threads_slug_id   ON threads(slug, id);
 CREATE INDEX idx_threads_forum_created    ON threads(forum, created);
 
 CLUSTER threads USING idx_threads_forum_created;
-
 
 CREATE FUNCTION threads_forum_counter()
   RETURNS TRIGGER AS '
@@ -84,7 +84,7 @@ CREATE UNLOGGED TABLE posts (
 
 CREATE UNIQUE INDEX idx_post_id ON posts(id);
 CREATE INDEX idx_post_thread_id ON posts(thread_id);
-CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
+CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
 CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
 
