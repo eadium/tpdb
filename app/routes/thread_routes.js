@@ -187,24 +187,24 @@ async function getPostsByID(req, reply, id) {
   let sql;
   let args = [];
   if (sort === 'flat') {
-    sql = `SELECT p.id, p.thread_id AS thread, p.created,
-    p.message, p.parent_id AS parent, p.author, p.forum_slug AS forum FROM posts p
-    WHERE thread_id = $1`;
+    sql = `SELECT id, thread_id AS thread, created,
+    message, parent_id AS parent, author, forum_slug AS forum FROM
+    (SELECT * FROM posts WHERE thread_id = $1 `;
     args = [slugOrId];
     let i = 2;
     if (since !== undefined) {
       if (desc === 'true') {
-        sql += ` AND p.id < $${i++}`;
+        sql += ` AND id < $${i++}`;
       } else {
-        sql += ` AND p.id > $${i++}`;
+        sql += ` AND id > $${i++}`;
       }
       args.push(since);
     }
-
+    sql += ' ) p ';
     if (desc === 'true') {
-      sql += ' ORDER BY p.created DESC, p.id DESC ';
+      sql += ' ORDER BY created DESC, id DESC ';
     } else {
-      sql += ' ORDER BY p.created, p.id  ';
+      sql += ' ORDER BY created, id  ';
     }
 
     if (limit !== undefined) {
@@ -226,8 +226,8 @@ async function getPostsByID(req, reply, id) {
     args.push(slugOrId);
 
     if (since !== undefined) {
-      sinceSql = ` AND (p.path ${desc === 'true' ? '<' : '>'}
-        (SELECT p2.path FROM posts p2 WHERE p2.id = $${i++})) `;
+      sinceSql = ` AND (path ${desc === 'true' ? '<' : '>'}
+        (SELECT path FROM posts WHERE id = $${i++})) `;
       args.push(since);
     } else {
       sinceSql = '';
@@ -247,13 +247,15 @@ async function getPostsByID(req, reply, id) {
     }
 
     sql = `
-      SELECT p.id, p.author, p.created, p.message, p.parent_id AS parent,
-        COALESCE(p.parent_id,0), p.forum_slug AS forum, thread_id AS thread
-        FROM posts p
-        WHERE p.thread_id = $1 ${sinceSql}
-        ORDER BY p.path ${descSql}
+      SELECT id, author, created, message, parent_id AS parent,
+        COALESCE(parent_id,0), forum_slug AS forum, thread_id AS thread
+        FROM posts
+        WHERE thread_id = $1 ${sinceSql}
+        ORDER BY path ${descSql}
         ${limitSql}
     `;
+
+    //  parent tree
   } else {
     args = [slugOrId];
     const descSql = desc === 'true' ? 'DESC' : '';
@@ -371,7 +373,7 @@ async function getPostsByID(req, reply, id) {
 
 async function getPosts(req, reply) {
   const now = new Date();
-  console.log('get Posts: ', now.getSeconds(), ':', now.getMilliseconds());
+  // console.log('get Posts: ', now.getSeconds(), ':', now.getMilliseconds());
 
   if (isNaN(req.params.slug)) {
     db.one({
