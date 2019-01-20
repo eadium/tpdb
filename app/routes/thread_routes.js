@@ -263,8 +263,8 @@ async function getPostsByID(req, reply, id) {
     let limitSql;
     let k = 2;
     if (since !== undefined) {
-      sinceSql = `AND id ${desc === 'true' ? '<' : '>'}
-                      (SELECT path[1] FROM posts WHERE id = $${k++})`;
+      sinceSql = `
+        AND id ${desc === 'true' ? '<' : '>'} (SELECT path[1] FROM posts WHERE id = $${k++})`;
       args.push(since);
     } else {
       sinceSql = '';
@@ -352,7 +352,7 @@ async function getPostsByID(req, reply, id) {
 
       const now4 = new Date();
       // console.log('reply sent: ', now4.getSeconds(), ':', now4.getMilliseconds());
-      // console.log('time taken: ', now4.getTime() - now.getTime(), 'sort: ', sort);
+      console.log('time taken: ', now4.getTime() - now.getTime(), 'sort: ', sort);
 
       reply.code(200)
         .send(data);

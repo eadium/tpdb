@@ -90,6 +90,7 @@ CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
 CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
 CREATE INDEX idx_posts_main      ON posts USING hash (id); -- parent_tree, flat
 
+
 -- CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
 
 -- CREATE INDEX idx_post_threadid_path ON posts(thread_id,path);
