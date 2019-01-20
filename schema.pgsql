@@ -84,11 +84,17 @@ CREATE UNLOGGED TABLE posts (
 
 CREATE UNIQUE INDEX idx_post_id ON posts(id);
 CREATE INDEX idx_post_thread_id ON posts(thread_id);
-CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
+CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
 CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
-CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
+CREATE INDEX idx_post_threadid_path1_path ON posts(thread_id,(path[1]),path);
+-- CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
 
-CLUSTER posts USING idx_post_cr_id;
+-- CREATE INDEX idx_post_threadid_path ON posts(thread_id,path);
+-- CREATE INDEX idx_post_threadid_parentid_path1_path ON posts(thread_id,parent_id,(path[1]),path);
+-- CREATE INDEX idx_post_threadid_parentid_path ON posts(thread_id,parent_id,path);
+-- CREATE INDEX idx_post_threadid_id ON posts(thread_id,id);
+
+-- CLUSTER posts USING idx_post_cr_id;
 
 CREATE FUNCTION update_path()
   RETURNS TRIGGER AS '

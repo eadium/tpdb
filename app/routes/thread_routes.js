@@ -171,6 +171,9 @@ async function getThreadInfo(req, reply) {
 }
 
 async function getPostsByID(req, reply, id) {
+  const now = new Date();
+  // console.log('getPostsByID: ', now.getSeconds(), ':', now.getMilliseconds());
+
   const slugOrId = id;
 
   const { limit } = req.query;
@@ -270,7 +273,7 @@ async function getPostsByID(req, reply, id) {
       limitSql = `LIMIT $${k++}`;
       args.push(limit);
     } else {
-      limitSql = '';
+      limitSql = 'LIMIT 100000';
     }
 
     sql = `
@@ -288,7 +291,10 @@ async function getPostsByID(req, reply, id) {
     `;
   }
 
-  console.log(sql, args);
+  const now1 = new Date();
+  // console.log('query made : ', now1.getSeconds(), ':', now1.getMilliseconds());
+  // console.log('sort: ', sort);
+  // console.log(sql, args);
 
   db.any({
     text: sql,
@@ -297,6 +303,9 @@ async function getPostsByID(req, reply, id) {
     .then(async (data) => {
       if (data.length === 0) {
         // console.log('data: ', data);
+
+        const now2 = new Date();
+        // console.log('result is empty : ', now2.getSeconds(), ':', now2.getMilliseconds());
 
         let query = 'SELECT threads.id FROM threads WHERE ';
         if (isNaN(slugOrId)) {
@@ -311,6 +320,10 @@ async function getPostsByID(req, reply, id) {
           values: slugOrId,
         })
           .then((threadForumInfo) => {
+
+            const now3 = new Date();
+            // console.log('got threadForumInfo: ', now3.getSeconds(), ':', now3.getMilliseconds()); 
+
             // console.log(threadForumInfo);
             if (threadForumInfo.length === 0) {
               reply.code(404)
@@ -336,6 +349,10 @@ async function getPostsByID(req, reply, id) {
           });
       }
 
+      const now4 = new Date();
+      // console.log('reply sent: ', now4.getSeconds(), ':', now4.getMilliseconds());
+      console.log('time taken: ', now4.getTime() - now.getTime(), 'sort: ', sort);
+
       reply.code(200)
         .send(data);
     })
@@ -353,6 +370,9 @@ async function getPostsByID(req, reply, id) {
 }
 
 async function getPosts(req, reply) {
+  const now = new Date();
+  console.log('get Posts: ', now.getSeconds(), ':', now.getMilliseconds());
+
   if (isNaN(req.params.slug)) {
     db.one({
       text: 'SELECT id FROM threads WHERE slug=$1',
