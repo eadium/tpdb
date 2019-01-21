@@ -9,7 +9,6 @@ DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS fusers CASCADE;
 
 CREATE UNLOGGED TABLE IF NOT EXISTS users (
-  -- id       SERIAL    PRIMARY KEY,
   nickname CITEXT         NOT NULL PRIMARY KEY,
   email    CITEXT         NOT NULL UNIQUE,
   fullname CITEXT         NOT NULL,
@@ -18,7 +17,6 @@ CREATE UNLOGGED TABLE IF NOT EXISTS users (
 
 CREATE UNIQUE INDEX idx_users_nickname ON users(nickname COLLATE "C");
 CLUSTER users USING idx_users_nickname;
--- CREATE UNIQUE INDEX idx_users_email    ON users(email);
 
 ----------------------------- FORUMS ------------------------------
 
@@ -54,7 +52,7 @@ CREATE INDEX idx_threads_forum_created   ON threads(forum, created);
 
 CLUSTER threads USING idx_threads_forum_created;
 
-CREATE FUNCTION threads_forum_counter()
+CREATE OR REPLACE FUNCTION threads_forum_counter()
   RETURNS TRIGGER AS '
     BEGIN
       UPDATE forums
@@ -82,15 +80,20 @@ CREATE UNLOGGED TABLE posts (
   thread_id INTEGER NOT NULL
 );
 
--- CREATE UNIQUE INDEX idx_post_id ON posts (id);
--- CREATE INDEX idx_post_thread_id ON posts(thread_id); --too heavy
-CREATE INDEX idx_post_cr_id ON posts(id, thread_id, created);
-CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
--- CREATE INDEX idx_post_threadid_path1_path ON posts(thread_id,(path[1]),path); --useless and heavy
+CREATE INDEX idx_post_crid ON posts(created, id);
+CREATE INDEX idx_post_forum ON posts(forum_slug);
+CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id);
+CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, parent_id);
+CREATE INDEX idx_posts_root_path      ON posts ((path[1]), path);           -- parent_tree
 CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
 CREATE INDEX idx_posts_main      ON posts USING hash (id); -- parent_tree, flat
 
-
+-- CREATE UNIQUE INDEX idx_post_id ON posts (id);
+-- CREATE INDEX idx_post_thread_id ON posts(thread_id); --too heavy
+-- CREATE INDEX idx_post_id_thid_crid ON posts(id, thread_id, created);
+-- CREATE INDEX idx_post_threadid_path1_path ON posts(thread_id,(path[1]),path); --useless and heavy
+-- CREATE INDEX idx_posts_parent    ON posts (parent_id); -- parent_tree, flat
+-- CREATE INDEX idx_posts_root_desc      ON posts ((path[1]) DESC, path);           -- parent_tree
 -- CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
 
 -- CREATE INDEX idx_post_threadid_path ON posts(thread_id,path);
@@ -98,11 +101,11 @@ CREATE INDEX idx_posts_main      ON posts USING hash (id); -- parent_tree, flat
 -- CREATE INDEX idx_post_threadid_parentid_path ON posts(thread_id,parent_id,path);
 -- CREATE INDEX idx_post_threadid_id ON posts(thread_id,id);
 
--- CLUSTER posts USING idx_post_cr_id;
+CLUSTER posts USING idx_post_crid;
 
-CREATE FUNCTION update_path()
-  RETURNS TRIGGER AS '
-    BEGIN
+CREATE OR REPLACE FUNCTION update_path()
+RETURNS TRIGGER AS '
+  BEGIN
     IF NEW.parent_id = NULL THEN
       UPDATE posts
         SET path = array_append(NEW.path, NEW.id)
@@ -113,15 +116,16 @@ CREATE FUNCTION update_path()
         SET path = array_append(
             (SELECT path FROM posts WHERE id=NEW.parent_id), NEW.id)
         WHERE id=NEW.id;
+
         RETURN NULL;
-    END;
+  END;
 ' LANGUAGE plpgsql;
 
 CREATE TRIGGER on_insert_post_update_path
 AFTER INSERT ON posts
 FOR EACH ROW EXECUTE PROCEDURE update_path();
 
-CREATE FUNCTION set_edited()
+CREATE OR REPLACE FUNCTION set_edited()
   RETURNS TRIGGER AS '
     BEGIN
       IF (NEW.message = OLD.message)
@@ -137,7 +141,7 @@ CREATE TRIGGER set_edited
 AFTER UPDATE ON posts
 FOR EACH ROW EXECUTE PROCEDURE set_edited();
 
-CREATE FUNCTION check_edited(pid INT, message TEXT)
+CREATE OR REPLACE FUNCTION check_edited(pid INT, message TEXT)
   RETURNS BOOLEAN AS '
     BEGIN
       IF (
@@ -154,10 +158,7 @@ CREATE FUNCTION check_edited(pid INT, message TEXT)
 CREATE UNLOGGED TABLE IF NOT EXISTS votes (
   user_id   CITEXT REFERENCES users(nickname)   NOT NULL,
   thread_id INT REFERENCES threads(id) NOT NULL,
-  -- author CITEXT NOT NULL REFERENCES users(nickname),
-  -- slug      CITEXT      NOT NULL,
   voice     INT                           NOT NULL
-  -- CONSTRAINT votes_user_thread_unique UNIQUE (user_id, thread_id)
 );
 
 ALTER TABLE ONLY votes
@@ -165,7 +166,7 @@ ALTER TABLE ONLY votes
 
 CLUSTER votes USING votes_user_thread_unique;
 
-CREATE FUNCTION vote_insert()
+CREATE OR REPLACE FUNCTION vote_insert()
   RETURNS TRIGGER AS '
     BEGIN
         UPDATE threads
@@ -181,7 +182,7 @@ AFTER INSERT ON votes
 FOR EACH ROW EXECUTE PROCEDURE vote_insert();
 
 
-CREATE FUNCTION vote_update()
+CREATE OR REPLACE FUNCTION vote_update()
   RETURNS TRIGGER AS '
 BEGIN
   IF OLD.voice = NEW.voice
@@ -213,11 +214,3 @@ CREATE UNLOGGED TABLE fusers (
 CREATE UNIQUE INDEX idx_fusers_slug ON fusers(forum_slug, username);
 
 CLUSTER fusers USING idx_fusers_slug;
-
------------------------------ INDEXES ----------------------------------
--- CREATE INDEX idx_threads_slug_created    ON threads(created);
--- CREATE INDEX idx_post_id ON posts(id);
--- CREATE INDEX idx_post_thread_id ON posts(thread_id);
--- CREATE INDEX idx_post_cr_id ON posts(created, id, thread_id);
--- CREATE INDEX idx_post_thread_id_cr_i ON posts(thread_id, id);
--- CREATE INDEX idx_post_thread_id_p_i ON posts(thread_id, (path[1]), id);
