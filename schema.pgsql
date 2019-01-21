@@ -69,7 +69,7 @@ FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
 ----------------------------- POSTS -------------------------------
 
 CREATE UNLOGGED TABLE posts (
-  id SERIAL,
+  id SERIAL PRIMARY KEY,
   path INTEGER[],
   author CITEXT NOT NULL REFERENCES users(nickname),
   created TIMESTAMPTZ DEFAULT now(),
@@ -84,10 +84,10 @@ CREATE INDEX idx_post_thid_cr_id ON posts(thread_id, created, id); --flat
 CREATE INDEX idx_post_thid_path ON posts(thread_id, path); --tree
 CREATE INDEX idx_post_forum ON posts(forum_slug);
 CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id); --parent tree
-CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, parent_id);
 CREATE INDEX idx_posts_root_path      ON posts ((path[1]), path);           -- parent_tree
+CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, parent_id);
 -- CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
-CREATE INDEX idx_posts_main      ON posts (id); -- parent_tree, flat
+-- CREATE INDEX idx_posts_main      ON posts (id); -- parent_tree, flat
 
 -- CREATE UNIQUE INDEX idx_post_id ON posts (id);
 -- CREATE INDEX idx_post_thread_id ON posts(thread_id); --too heavy
