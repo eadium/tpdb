@@ -21,15 +21,15 @@ CLUSTER users USING idx_users_nickname;
 ----------------------------- FORUMS ------------------------------
 
 CREATE UNLOGGED TABLE IF NOT EXISTS forums (
-  id      BIGSERIAL PRIMARY KEY,
-  slug    CITEXT,
+  id      SERIAL,
+  slug    CITEXT PRIMARY KEY,
   posts   INT    NOT NULL DEFAULT 0,
   threads INT       NOT NULL DEFAULT 0,
   title   TEXT      NOT NULL,
   "user"  CITEXT      NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_forums_slug    ON forums(slug);
+-- CREATE UNIQUE INDEX idx_forums_slug    ON forums(slug);
 CLUSTER forums USING idx_forums_slug;
 
 ----------------------------- THREADS ------------------------------
@@ -46,7 +46,7 @@ CREATE UNLOGGED TABLE IF NOT EXISTS threads (
 );
 
 CREATE UNIQUE INDEX idx_thread_id        ON threads(id);
-CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
+-- CREATE INDEX idx_threads_slug_created    ON threads(slug, created);
 CREATE INDEX idx_threads_slug_id         ON threads(slug, id);
 CREATE INDEX idx_threads_forum_created   ON threads(forum, created);
 
@@ -80,13 +80,14 @@ CREATE UNLOGGED TABLE posts (
   thread_id INTEGER NOT NULL
 );
 
-CREATE INDEX idx_post_crid ON posts(created, id);
+CREATE INDEX idx_post_thid_cr_id ON posts(thread_id, created, id); --flat
+CREATE INDEX idx_post_thid_path ON posts(thread_id, path); --tree
 CREATE INDEX idx_post_forum ON posts(forum_slug);
-CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id);
+CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id); --parent tree
 CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, parent_id);
 CREATE INDEX idx_posts_root_path      ON posts ((path[1]), path);           -- parent_tree
-CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
-CREATE INDEX idx_posts_main      ON posts USING hash (id); -- parent_tree, flat
+-- CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
+CREATE INDEX idx_posts_main      ON posts (id); -- parent_tree, flat
 
 -- CREATE UNIQUE INDEX idx_post_id ON posts (id);
 -- CREATE INDEX idx_post_thread_id ON posts(thread_id); --too heavy

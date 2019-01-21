@@ -248,7 +248,7 @@ async function getPostsByID(req, reply, id) {
 
     sql = `
       SELECT id, author, created, message, parent_id AS parent,
-        COALESCE(parent_id,0), forum_slug AS forum, thread_id AS thread
+        forum_slug AS forum, thread_id AS thread
         FROM posts
         WHERE thread_id = $1 ${sinceSql}
         ORDER BY path ${descSql}
