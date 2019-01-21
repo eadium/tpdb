@@ -68,26 +68,25 @@ async function getForumUsers(req, reply) {
   const { slug } = req.params;
 
   let query = `
-    SELECT * FROM "users"
-    WHERE nickname IN (
-      SELECT username FROM fusers
-      WHERE forum_slug = $1
-    )
+    SELECT u.* FROM "users" u
+    JOIN fusers f ON u.id = f.user_id
+    WHERE
+      f.forum_slug = $1
     `;
   const args = [slug];
   let i = 2;
   if (since !== undefined) {
     if (desc === 'true') {
-      query += ` AND nickname < $${i++} COLLATE "C" `;
+      query += ` AND f.username < $${i++} COLLATE "C" `;
     } else {
-      query += ` AND nickname > $${i++} COLLATE "C" `;
+      query += ` AND f.username > $${i++} COLLATE "C" `;
     }
     args.push(since);
   }
   if (desc === 'true') {
-    query += ' ORDER BY nickname COLLATE "C" DESC ';
+    query += ' ORDER BY f.username COLLATE "C" DESC ';
   } else {
-    query += ' ORDER BY nickname COLLATE "C" ASC ';
+    query += ' ORDER BY f.username COLLATE "C" ASC ';
   }
   if (limit !== undefined) {
     query += ` LIMIT $${i++}`;

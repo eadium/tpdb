@@ -4,13 +4,13 @@ const { db } = dbConfig;
 
 async function ping(req, reply) {
   db.none({
-    text: 'ANALYZE',
-  });
-    // .then(() => {
-    //   db.none({
-    //     text: 'CLUSTER',
-    //   });
-    // });
+    text: 'UPDATE fusers f SET user_id = (SELECT id FROM users u WHERE u.nickname = f.username);',
+  })
+    .then(() => {
+      db.none({
+        text: 'ANALYZE',
+      });
+    });
 
   reply.code(200).send({});
 }

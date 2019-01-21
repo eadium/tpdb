@@ -287,7 +287,7 @@ async function getPostsByID(req, reply, id) {
         ${sinceSql}
         ORDER BY id ${descSql}
         ${limitSql}
-      )
+      ) AND thread_id=$1
       ORDER BY path[1] ${descSql}, path;
     `;
   }

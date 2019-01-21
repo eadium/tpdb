@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS fusers CASCADE;
 
 CREATE UNLOGGED TABLE IF NOT EXISTS users (
+  id SERIAL UNIQUE,
   nickname CITEXT         NOT NULL PRIMARY KEY,
   email    CITEXT         NOT NULL UNIQUE,
   fullname CITEXT         NOT NULL,
@@ -69,7 +70,7 @@ FOR EACH ROW EXECUTE PROCEDURE threads_forum_counter();
 ----------------------------- POSTS -------------------------------
 
 CREATE UNLOGGED TABLE posts (
-  id SERIAL PRIMARY KEY,
+  id SERIAL,
   path INTEGER[],
   author CITEXT NOT NULL REFERENCES users(nickname),
   created TIMESTAMPTZ DEFAULT now(),
@@ -82,25 +83,12 @@ CREATE UNLOGGED TABLE posts (
 
 CREATE INDEX idx_post_thid_cr_id ON posts(thread_id, created, id); --flat
 CREATE INDEX idx_post_thid_path ON posts(thread_id, path); --tree
-CREATE INDEX idx_post_forum ON posts(forum_slug);
-CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id); --parent tree
-CREATE INDEX idx_posts_root_path      ON posts ((path[1]), path);           -- parent_tree
-CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, parent_id);
+CREATE INDEX idx_posts_root_path      ON posts (thread_id, (path[1]), path);           -- parent_tree
+CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, id) WHERE parent_id IS NULL;
 -- CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
--- CREATE INDEX idx_posts_main      ON posts (id); -- parent_tree, flat
-
--- CREATE UNIQUE INDEX idx_post_id ON posts (id);
--- CREATE INDEX idx_post_thread_id ON posts(thread_id); --too heavy
--- CREATE INDEX idx_post_id_thid_crid ON posts(id, thread_id, created);
--- CREATE INDEX idx_post_threadid_path1_path ON posts(thread_id,(path[1]),path); --useless and heavy
--- CREATE INDEX idx_posts_parent    ON posts (parent_id); -- parent_tree, flat
--- CREATE INDEX idx_posts_root_desc      ON posts ((path[1]) DESC, path);           -- parent_tree
--- CREATE INDEX idx_post_path_thread_id_i ON posts(path, thread_id, id);
-
--- CREATE INDEX idx_post_threadid_path ON posts(thread_id,path);
--- CREATE INDEX idx_post_threadid_parentid_path1_path ON posts(thread_id,parent_id,(path[1]),path);
--- CREATE INDEX idx_post_threadid_parentid_path ON posts(thread_id,parent_id,path);
--- CREATE INDEX idx_post_threadid_id ON posts(thread_id,id);
+CREATE INDEX idx_posts_main      ON posts (id); -- parent_tree, flat
+CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id); --parent tree
+-- CREATE INDEX idx_post_forum ON posts(forum_slug);
 
 CLUSTER posts USING idx_post_crid;
 
@@ -207,11 +195,13 @@ FOR EACH ROW EXECUTE PROCEDURE vote_update();
 ----------------------------- FORUM_USERS -----------------------------
 
 CREATE UNLOGGED TABLE fusers (
+    user_id INT,
     forum_slug CITEXT NOT NULL,
     username CITEXT NOT NULL--,
     -- CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)
 );
 
-CREATE UNIQUE INDEX idx_fusers_slug ON fusers(forum_slug, username);
+CREATE UNIQUE INDEX idx_fusers_slug ON fusers(forum_slug, username COLLATE "C");
+UPDATE fusers f SET user_id = (SELECT id FROM users u WHERE u.nickname = f.username);
 
 CLUSTER fusers USING idx_fusers_slug;
