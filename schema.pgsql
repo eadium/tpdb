@@ -195,13 +195,14 @@ FOR EACH ROW EXECUTE PROCEDURE vote_update();
 ----------------------------- FORUM_USERS -----------------------------
 
 CREATE UNLOGGED TABLE fusers (
-    user_id INT,
+    user_id INT REFERENCES users(id),
     forum_slug CITEXT NOT NULL,
     username CITEXT NOT NULL--,
     -- CONSTRAINT userforum_pkey UNIQUE (forum_slug, username)
 );
 
 CREATE UNIQUE INDEX idx_fusers_slug ON fusers(forum_slug, username COLLATE "C");
-UPDATE fusers f SET user_id = (SELECT id FROM users u WHERE u.nickname = f.username);
+
+-- UPDATE fusers f SET user_id = (SELECT id FROM users u WHERE u.nickname = f.username);
 
 CLUSTER fusers USING idx_fusers_slug;

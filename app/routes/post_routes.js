@@ -89,12 +89,12 @@ async function createPost(req, reply) {
           });
 
           let fusersSql = `
-            INSERT INTO fusers(forum_slug, username) VALUES
+            INSERT INTO fusers(user_id, forum_slug, username) VALUES
           `;
           let index = 1;
           const fusersArgs = [];
           for (let k = 0; k < forumUsers.length; k++) {
-            fusersSql += `($${index}, $${index + 1}),`;
+            fusersSql += `((SELECT id FROM users WHERE users.nickname = $${index + 1}), $${index}, $${index + 1}),`;
             index += 2;
             fusersArgs.push(threadForumInfo.forum, forumUsers[k]);
           }

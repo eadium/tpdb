@@ -29,8 +29,8 @@ async function createThread(req, reply) {
     .then(async (data) => {
       // one more batch...
       const usersSql = `
-        INSERT INTO fusers(forum_slug, username) VALUES
-          ($1, $2) ON CONFLICT DO NOTHING
+        INSERT INTO fusers(user_id,forum_slug, username) VALUES
+          ((SELECT id FROM users WHERE users.nickname = $2), $1, $2) ON CONFLICT DO NOTHING
       `;
       // console.log(usersSql);
       await db.none({
