@@ -3,15 +3,9 @@ const dbConfig = require('../../config/db');
 const { db } = dbConfig;
 
 async function ping(req, reply) {
-  // setTimeout(() => reply.code(200).send({}), 110000);
-  // await db.none({
-  //   text: 'VACUUM FULL',
-  // });
-  // // .then(() => {
   db.none({
     text: 'ANALYZE',
   });
-  // });
   reply.code(200).send({});
 }
 

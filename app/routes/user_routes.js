@@ -53,8 +53,6 @@ async function getUserInfo(req, reply) {
             message: `Can't find user by nickname ${req.params.nickname}`,
           });
       }
-      // console.log(data);
-      // const user = data.map(existingUser => new User(existingUser))[0];
       reply.code(200)
         .send(data);
     })
@@ -90,7 +88,7 @@ async function updateUserInfo(req, reply) {
     WHERE nickname = '${req.params.nickname}'
     RETURNING *`;
 
-  db.any(query)
+  db.one(query)
     .then((data) => {
       if (data.length === 0) {
         reply.code(404)
@@ -98,9 +96,8 @@ async function updateUserInfo(req, reply) {
             message: `Can't find user by nickname ${req.params.nickname}`,
           });
       }
-      const user = data.map(existingUser => new User(existingUser))[0];
       reply.code(200)
-        .send(user);
+        .send(data);
     })
     .catch((err) => {
       // console.log(err);

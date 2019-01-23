@@ -13,14 +13,11 @@ async function createPost(req, reply) {
   const posts = req.body;
   dbConfig.postsCount += posts.length;
 
-  // console.log(sql, req.params.slug)
-
   db.one({
     text: sql,
     values: req.params.slug,
   })
     .then((threadForumInfo) => {
-      // console.log('threadForumInfo', threadForumInfo)
       if (posts.length === 0) {
         reply.code(201).send([]);
       }
@@ -31,11 +28,11 @@ async function createPost(req, reply) {
           });
       }
 
-      sql = 'INSERT INTO posts (id, edited, author, message, thread_id, parent_id, path, forum_slug) VALUES ';
+      sql = `INSERT INTO posts (id, edited, author, message,
+              thread_id, parent_id, path, forum_slug) VALUES `;
 
       const args = [];
       let i = 1;
-      // dbConfig.counter.post += posts.length;
       const forumUsers = [];
 
       for (let j = 0; j < posts.length; j++) {
@@ -82,12 +79,10 @@ async function createPost(req, reply) {
       sql += ` RETURNING author, id, created,
         thread_id AS thread, parent_id AS parent, forum_slug AS forum, message`;
 
-      // console.log(sql);
-
-      db.any(({
+      db.any({
         text: sql,
         values: args,
-      }))
+      })
         .then(async (data) => {
           await db.none({
             text: 'UPDATE forums SET posts=forums.posts+$1 WHERE slug=$2',
@@ -100,14 +95,13 @@ async function createPost(req, reply) {
           let index = 1;
           const fusersArgs = [];
           for (let k = 0; k < forumUsers.length; k++) {
-            fusersSql += `((SELECT id FROM users WHERE users.nickname = $${index + 1}), $${index}, $${index + 1}),`;
+            fusersSql += `((SELECT id FROM users WHERE users.nickname = $${index + 1}),
+              $${index}, $${index + 1}),`;
             index += 2;
             fusersArgs.push(threadForumInfo.forum, forumUsers[k]);
           }
           fusersSql = fusersSql.slice(0, -1);
           fusersSql += ' ON CONFLICT DO NOTHING';
-
-          // console.log(fusersSql);
 
           await db.none({
             text: fusersSql,
@@ -115,24 +109,10 @@ async function createPost(req, reply) {
           })
             .catch(err => console.log(err));
 
-
-          // dbConfig.fusers.set(forumUsers, threadForumInfo.forum);
-          // console.log('isFill: ', dbConfig.isFill, '\nposts: ', dbConfig.postsCount);
-          // if (dbConfig.isFill === true) {
-          //   if (dbConfig.postsCount >= 1500000) {
-          //     dbConfig.timeToThinFill = true;
-          //     await insertForumUsersAtFill();
-          //     // await finishDB();
-          //   }
-          // } else if (dbConfig.isFill === false || dbConfig.timeToThinFill === true) {
-          //   await insertForumUsersAtFill();
-          //   // console.log(posts.length);
-          // }
-
           reply.code(201).send(data);
         })
         .catch((error) => {
-          // console.log(error);
+          console.log(error);
           if (error.code === dbConfig.notNullErorr) {
             reply.code(409)
               .send({
@@ -324,8 +304,6 @@ async function updatePost(req, reply) {
     `;
     args.push(req.body.message, req.params.id);
   }
-
-  // console.log(query);
 
   db.one(query, args)
     .then((data) => {
