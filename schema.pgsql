@@ -85,10 +85,10 @@ CREATE INDEX idx_post_thid_cr_id ON posts(thread_id, created, id); --flat
 CREATE INDEX idx_post_thid_path ON posts(thread_id, path); --tree
 CREATE INDEX idx_posts_root_path      ON posts (thread_id, (path[1]), path);           -- parent_tree
 CREATE INDEX idx_post_thread_id_parent_id ON posts(thread_id, id) WHERE parent_id IS NULL;
-CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
+-- CREATE INDEX idx_posts_root      ON posts ((path[1]));           -- parent_tree
 CREATE INDEX idx_posts_main      ON posts (id); -- parent_tree, flat
 CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id); --parent tree
-CREATE INDEX idx_post_forum ON posts(forum_slug);
+-- CREATE INDEX idx_post_forum ON posts(forum_slug);
 
 CLUSTER posts USING idx_post_crid;
 
