@@ -4,7 +4,7 @@ const { db } = dbConfig;
 
 async function ping(req, reply) {
   db.none({
-    text: 'UPDATE fusers f SET user_id = (SELECT id FROM users u WHERE u.nickname = f.username);',
+    text: 'VACUUM FULL',
   })
     .then(() => {
       db.none({
