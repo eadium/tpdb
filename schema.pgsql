@@ -92,27 +92,23 @@ CREATE INDEX idx_post_thread_id_id ON posts(thread_id, id, parent_id); --parent 
 
 CLUSTER posts USING idx_post_crid;
 
-CREATE OR REPLACE FUNCTION update_path()
-RETURNS TRIGGER AS '
-  BEGIN
-    IF NEW.parent_id = NULL THEN
-      UPDATE posts
-        SET path = array_append(NEW.path, NEW.id)
-        WHERE id=NEW.id;
-        RETURN NULL;
-    END IF;
-      UPDATE posts
-        SET path = array_append(
-            (SELECT path FROM posts WHERE id=NEW.parent_id), NEW.id)
-        WHERE id=NEW.id;
+-- CREATE OR REPLACE FUNCTION update_path()
+-- RETURNS TRIGGER AS '
+--   BEGIN
+--     IF NEW.parent_id = NULL THEN
+--         NEW.path = array_append(NEW.path, NEW.id);
+--         RETURN NEW;
+--     END IF;
+--         NEW.path = array_append(
+--             (SELECT path FROM posts WHERE id=NEW.parent_id), NEW.id);
 
-        RETURN NULL;
-  END;
-' LANGUAGE plpgsql;
+--         RETURN NEW;
+--   END;
+-- ' LANGUAGE plpgsql;
 
-CREATE TRIGGER on_insert_post_update_path
-AFTER INSERT ON posts
-FOR EACH ROW EXECUTE PROCEDURE update_path();
+-- CREATE TRIGGER on_insert_post_update_path
+-- BEFORE INSERT ON posts
+-- FOR EACH ROW EXECUTE PROCEDURE update_path();
 
 CREATE OR REPLACE FUNCTION set_edited()
   RETURNS TRIGGER AS '

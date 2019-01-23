@@ -31,7 +31,7 @@ async function createPost(req, reply) {
           });
       }
 
-      sql = 'INSERT INTO posts (edited, author, message, thread_id, parent_id, forum_slug) VALUES ';
+      sql = 'INSERT INTO posts (id, edited, author, message, thread_id, parent_id, path, forum_slug) VALUES ';
 
       const args = [];
       let i = 1;
@@ -42,7 +42,8 @@ async function createPost(req, reply) {
         forumUsers.push(posts[j].author);
 
         if (posts[j].parent !== undefined) {
-          sql += `( FALSE, $${i}, $${i + 1}, (
+          sql += `((SELECT nextval('posts_id_seq')::integer),
+            FALSE, $${i}, $${i + 1}, (
               SELECT (
                 CASE WHEN
                 EXISTS (
@@ -51,7 +52,10 @@ async function createPost(req, reply) {
                   AND p.thread_id=$${i + 2}
                 )
                 THEN $${i + 2} ELSE NULL END)
-            ), $${i + 3}, $${i + 4}),`;
+            ), $${i + 3},  array_append(
+              (SELECT path FROM posts WHERE id=$${i + 3}),
+                (SELECT currval('posts_id_seq')::integer)),
+                $${i + 4}),`;
           i += 5;
           args.push(
             ...[posts[j].author,
@@ -61,7 +65,9 @@ async function createPost(req, reply) {
               threadForumInfo.forum],
           );
         } else {
-          sql += `( FALSE, $${i}, $${i + 1}, $${i + 2}, NULL, $${i + 3}),`;
+          sql += `((SELECT nextval('posts_id_seq')::integer),
+            FALSE, $${i}, $${i + 1}, $${i + 2}, NULL,
+              array_append('{}', (SELECT currval('posts_id_seq')::integer)), $${i + 3}),`;
           i += 4;
           args.push(
             ...[posts[j].author,
