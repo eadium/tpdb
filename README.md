@@ -1,4 +1,4 @@
-# Семестровый проект по курсу "Базы Данных" в Технопарке
+# Семестровый проект по курсу "Базы Данных"
 
 
 ## Сборка
@@ -89,13 +89,13 @@ go build github.com/bozaro/tech-db-forum
 Параметр                              | Описание
 ---                                   | ---
 -h, --help                            |  Display help information
--u, --url[=http://localhost:5000/api] |  Base url for testing API
+-u, --url |  Base url for testing API
 --wait[=30]                           |  Wait before remote API make alive (while connection refused or 5XX error on base url)
 --no-check                            |  Do not check version update
 -t, --thread[=8]                      |  Number of threads for performance testing
 --timeout[=1800]                      |  Fill timeout (sec)
 -i, --state[=tech-db-forum.dat.gz]    |  State file with information about database objects
--o, --best[=tech-db-forum.best.txt]   |  File for best result
+-o, --best                            |  File for best result
 -v, --validate[=0.05]                 |  The probability of verifying the answer
 -d, --duration[=-1]                   |  Test duration (sec)
 -s, --step[=10]                       |  Sampling step (sec)
