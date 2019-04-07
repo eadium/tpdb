@@ -1,15 +1,14 @@
-const User = require('../models/user');
 const dbConfig = require('../../config/db');
 
 const { db } = dbConfig;
 
 async function createUser(req, reply) {
-  const user = new User({
+  const user = {
     nickname: req.params.nickname,
     fullname: req.body.fullname,
     email: req.body.email,
     about: req.body.about,
-  });
+  };
 
   db.one({
     text: 'INSERT INTO users (nickname, fullname, email, about) '
